@@ -16,48 +16,46 @@
       </header>
 
       <div class="grid lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 card">
-          <div class="section-head mb-6">
-            <h2 class="section-title">Canvas Preview</h2>
+          <div class="card">
+            <h2 class="section-title mb-6">Canvas Preview</h2>
             <button
               @click="fullscreen = !fullscreen"
-              class="btn-ghost btn-sm"
+              class="btn-ghost btn-sm absolute top-6 right-6"
             >
               {{ fullscreen ? 'Exit Fullscreen' : 'Fullscreen' }}
             </button>
-          </div>
-          <div class="bg-white rounded-md min-h-[600px] overflow-auto border border-border">
-            <div :style="canvasStyle" class="relative flex-shrink-0">
-              <div v-if="layout.background" class="absolute inset-0">
-                <img :src="layout.background" class="w-full h-full object-cover" />
-              </div>
-
-              <div
-                v-for="(el, idx) in layout.elements"
-                :key="idx"
-                class="absolute cursor-move border border-dashed border-transparent hover:border-accent transition-colors group"
-                :style="elementStyle(el)"
-                @mousedown="startDrag(idx, $event)"
-                @click="selectedElement = idx"
-              >
-                <div v-if="el.type === 'text'" :style="textStyle(el)">
-                  {{ el.content }}
+            <div class="bg-white rounded-2xl min-h-[600px] overflow-auto border border-border" style="background:var(--color-snow);">
+              <div :style="canvasStyle" class="relative flex-shrink-0">
+                <div v-if="layout.background" class="absolute inset-0">
+                  <img :src="layout.background" class="w-full h-full object-cover" />
                 </div>
-                <img v-else-if="el.type === 'image'" :src="el.src" class="w-full h-full object-contain" />
-                <template v-if="selectedElement === idx">
-                  <div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-nwse-resize" @mousedown.stop="startResize(idx, 'nw', $event)"></div>
-                  <div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-nesw-resize" @mousedown.stop="startResize(idx, 'ne', $event)"></div>
-                  <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-nesw-resize" @mousedown.stop="startResize(idx, 'sw', $event)"></div>
-                  <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-nwse-resize" @mousedown.stop="startResize(idx, 'se', $event)"></div>
-                  <div class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-ew-resize" @mousedown.stop="startResize(idx, 'w', $event)"></div>
-                  <div class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-ew-resize" @mousedown.stop="startResize(idx, 'e', $event)"></div>
-                  <div class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 bg-accent rounded-full cursor-ns-resize" @mousedown.stop="startResize(idx, 'n', $event)"></div>
-                  <div class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 bg-accent rounded-full cursor-ns-resize" @mousedown.stop="startResize(idx, 's', $event)"></div>
-                </template>
+
+                <div
+                  v-for="(el, idx) in layout.elements"
+                  :key="idx"
+                  class="absolute cursor-move border border-dashed border-transparent hover:border-obsidian transition-colors group"
+                  :style="elementStyle(el)"
+                  @mousedown="startDrag(idx, $event)"
+                  @click="selectedElement = idx"
+                >
+                  <div v-if="el.type === 'text'" :style="textStyle(el)">
+                    {{ el.content }}
+                  </div>
+                  <img v-else-if="el.type === 'image'" :src="el.src" class="w-full h-full object-contain" />
+                  <template v-if="selectedElement === idx">
+                    <div class="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nwse-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'nw', $event)"></div>
+                    <div class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nesw-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'ne', $event)"></div>
+                    <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nesw-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'sw', $event)"></div>
+                    <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nwse-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'se', $event)"></div>
+                    <div class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 rounded-full cursor-ew-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'w', $event)"></div>
+                    <div class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 rounded-full cursor-ew-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'e', $event)"></div>
+                    <div class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 rounded-full cursor-ns-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'n', $event)"></div>
+                    <div class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rounded-full cursor-ns-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 's', $event)"></div>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
         <Teleport to="body">
           <div
@@ -80,7 +78,8 @@
                 <div
                   v-for="(el, idx) in layout.elements"
                   :key="'fs-' + idx"
-                  class="absolute cursor-move border border-dashed border-accent/40 group"
+                  class="absolute cursor-move border border-dashed group"
+                  style="border-color:rgba(9,9,11,0.3);"
                   :style="elementStyle(el)"
                   @mousedown="startDrag(idx, $event)"
                   @click="selectedElement = idx"
@@ -90,14 +89,14 @@
                   </div>
                   <img v-else-if="el.type === 'image'" :src="el.src" class="w-full h-full object-contain" />
                   <template v-if="selectedElement === idx">
-                    <div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-nwse-resize" @mousedown.stop="startResize(idx, 'nw', $event)"></div>
-                    <div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-nesw-resize" @mousedown.stop="startResize(idx, 'ne', $event)"></div>
-                    <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-nesw-resize" @mousedown.stop="startResize(idx, 'sw', $event)"></div>
-                    <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-nwse-resize" @mousedown.stop="startResize(idx, 'se', $event)"></div>
-                    <div class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-accent rounded-full cursor-ew-resize" @mousedown.stop="startResize(idx, 'w', $event)"></div>
-                    <div class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-accent rounded-full cursor-ew-resize" @mousedown.stop="startResize(idx, 'e', $event)"></div>
-                    <div class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 bg-accent rounded-full cursor-ns-resize" @mousedown.stop="startResize(idx, 'n', $event)"></div>
-                    <div class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 bg-accent rounded-full cursor-ns-resize" @mousedown.stop="startResize(idx, 's', $event)"></div>
+                    <div class="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nwse-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'nw', $event)"></div>
+                    <div class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nesw-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'ne', $event)"></div>
+                    <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nesw-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'sw', $event)"></div>
+                    <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nwse-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'se', $event)"></div>
+                    <div class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 rounded-full cursor-ew-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'w', $event)"></div>
+                    <div class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 rounded-full cursor-ew-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'e', $event)"></div>
+                    <div class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 rounded-full cursor-ns-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 'n', $event)"></div>
+                    <div class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rounded-full cursor-ns-resize" style="background:var(--color-obsidian)" @mousedown.stop="startResize(idx, 's', $event)"></div>
                   </template>
                 </div>
               </div>
@@ -171,7 +170,7 @@
                   class="font-mono text-body-sm"
                   placeholder="Use {{name}}, {{date}}, {{certificate_id}}"
                 ></textarea>
-                <span class="text-caption">Placeholders: {{name}}, {{date}}, {{certificate_id}}</span>
+                <span class="text-caption" style="color:var(--color-steel);">Placeholders: {{name}}, {{date}}, {{certificate_id}}</span>
               </div>
 
               <div v-if="layout.elements[selectedElement]?.type === 'text'" class="form-group">
@@ -221,19 +220,22 @@
                 <div class="flex gap-2">
                   <button
                     @click="layout.elements[selectedElement].textAlign = 'left'"
-                    :class="['flex-1 py-2 px-3 rounded-md text-body-sm font-medium transition-all duration-150', (layout.elements[selectedElement].textAlign || 'left') === 'left' ? 'bg-accent text-black' : 'bg-bg border border-border text-muted']"
+                    :class="['flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150', (layout.elements[selectedElement].textAlign || 'left') === 'left' ? 'text-snow' : 'border border-border']"
+                    :style="(layout.elements[selectedElement].textAlign || 'left') === 'left' ? 'background:var(--color-obsidian); color:var(--color-snow);' : 'background:var(--color-mist); color:var(--color-steel);'"
                   >
                     Left
                   </button>
                   <button
                     @click="layout.elements[selectedElement].textAlign = 'center'"
-                    :class="['flex-1 py-2 px-3 rounded-md text-body-sm font-medium transition-all duration-150', layout.elements[selectedElement].textAlign === 'center' ? 'bg-accent text-black' : 'bg-bg border border-border text-muted']"
+                    :class="['flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150', layout.elements[selectedElement].textAlign === 'center' ? 'text-snow' : 'border border-border']"
+                    :style="layout.elements[selectedElement].textAlign === 'center' ? 'background:var(--color-obsidian); color:var(--color-snow);' : 'background:var(--color-mist); color:var(--color-steel);'"
                   >
                     Center
                   </button>
                   <button
                     @click="layout.elements[selectedElement].textAlign = 'right'"
-                    :class="['flex-1 py-2 px-3 rounded-md text-body-sm font-medium transition-all duration-150', layout.elements[selectedElement].textAlign === 'right' ? 'bg-accent text-black' : 'bg-bg border border-border text-muted']"
+                    :class="['flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150', layout.elements[selectedElement].textAlign === 'right' ? 'text-snow' : 'border border-border']"
+                    :style="layout.elements[selectedElement].textAlign === 'right' ? 'background:var(--color-obsidian); color:var(--color-snow);' : 'background:var(--color-mist); color:var(--color-steel);'"
                   >
                     Right
                   </button>

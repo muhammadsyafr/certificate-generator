@@ -2,26 +2,26 @@
   <div class="page">
     <div class="page-container">
       <header class="pt-8 pb-6 mb-8">
-        <NuxtLink to="/" class="inline-flex items-center gap-2 text-body-sm text-muted hover:text-foreground transition-colors mb-4">
+        <NuxtLink to="/" class="inline-flex items-center gap-2 text-body hover:text-foreground transition-colors mb-4" style="color:var(--color-steel);">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           <span>Back</span>
         </NuxtLink>
-        <h1 class="text-heading-xl font-bold tracking-tight mb-2">Asset Library</h1>
-        <p class="text-body text-muted">Upload logos, backgrounds, and free images for your certificates</p>
+        <h1 class="text-heading-lg font-bold tracking-tight mb-2" style="font-weight:600;">Asset Library</h1>
+        <p class="text-body" style="color:var(--color-steel);">Upload logos, backgrounds, and free images for your certificates</p>
       </header>
 
       <div class="card p-6 mb-8">
         <div class="flex items-center gap-3 mb-5">
-          <div class="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:var(--color-accent-muted);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-obsidian)" stroke-width="2" stroke-linecap="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </div>
-          <h2 class="text-heading font-semibold">Upload New Asset</h2>
+          <h2 class="text-heading font-semibold" style="font-weight:600;">Upload New Asset</h2>
         </div>
         <form @submit.prevent="uploadAsset" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -63,38 +63,38 @@
       </div>
 
       <div v-if="pending" class="card p-12 text-center">
-        <div class="text-muted text-body">Loading assets...</div>
+        <div class="text-body" style="color:var(--color-steel);">Loading assets...</div>
       </div>
 
       <div v-else-if="error" class="card p-12 text-center">
-        <div class="text-muted text-body">Failed to load assets</div>
+        <div class="text-body" style="color:var(--color-steel);">Failed to load assets</div>
       </div>
 
       <div v-else class="space-y-8">
         <section v-for="cat in categories" :key="cat">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-7 h-7 rounded-md bg-accent/10 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:var(--color-accent-muted);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-obsidian)" stroke-width="2" stroke-linecap="round">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <path d="M21 15l-5-5L5 21"/>
               </svg>
             </div>
-            <h2 class="text-heading font-semibold capitalize">{{ cat }}</h2>
+            <h2 class="text-heading font-semibold capitalize" style="font-weight:600;">{{ cat }}</h2>
           </div>
           <div v-if="getByCategory(cat).length === 0" class="card p-8 text-center">
-            <div class="text-muted text-body-sm">No assets in this category</div>
+            <div class="text-body" style="color:var(--color-steel);">No assets in this category</div>
           </div>
           <div v-else class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <div
               v-for="asset in getByCategory(cat)"
               :key="asset.id"
-              class="card p-2 group hover:border-accent/50 transition-colors"
+              class="card p-2 group hover:border-obsidian transition-colors"
             >
-              <div :class="cat === 'background' ? 'aspect-video' : 'aspect-square'" class="bg-bg rounded mb-2 flex items-center justify-center overflow-hidden border border-border cursor-pointer" @click="viewAsset(asset)">
+              <div :class="cat === 'background' ? 'aspect-video' : 'aspect-square'" class="rounded-xl mb-2 flex items-center justify-center overflow-hidden border border-border cursor-pointer" style="background:var(--color-mist);" @click="viewAsset(asset)">
                 <img :src="asset.filepath" :alt="asset.filename" class="max-w-full max-h-full object-contain" />
               </div>
-              <div class="text-caption mb-2 truncate" :title="asset.filename">
+              <div class="text-caption mb-2 truncate" :title="asset.filename" style="color:var(--color-steel);">
                 {{ asset.filename }}
               </div>
               <div class="flex gap-1">

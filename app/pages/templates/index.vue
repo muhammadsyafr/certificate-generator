@@ -5,6 +5,7 @@
         <div>
           <NuxtLink to="/" class="back-link">← Back</NuxtLink>
           <h1 class="page-title">Certificate Templates</h1>
+          <p class="page-desc">Design and manage your certificate layouts</p>
         </div>
         <NuxtLink to="/templates/new" class="btn-primary">
           + New Template
@@ -12,15 +13,15 @@
       </header>
 
       <div v-if="pending" class="card-empty">
-        <div class="text-muted text-body-lg">Loading templates...</div>
+        <div class="text-body-lg" style="color:var(--color-steel);">Loading templates...</div>
       </div>
 
       <div v-else-if="error" class="card-empty">
-        <div class="text-muted text-body-lg">Failed to load templates</div>
+        <div class="text-body-lg" style="color:var(--color-steel);">Failed to load templates</div>
       </div>
 
       <div v-else-if="!templates || templates.length === 0" class="card-empty">
-        <div class="text-muted text-body-lg mb-4">No templates yet</div>
+        <div class="text-body-lg mb-4" style="color:var(--color-steel);">No templates yet</div>
         <NuxtLink to="/templates/new" class="btn-primary">Create your first template</NuxtLink>
       </div>
 
@@ -31,7 +32,7 @@
           class="card group"
         >
           <div class="flex justify-between items-start mb-3">
-            <h3 class="text-heading-sm group-hover:text-accent transition-colors">
+            <h3 class="text-heading-sm group-hover:text-obsidian transition-colors" style="font-weight:600;">
               {{ template.name }}
             </h3>
             <button
@@ -45,7 +46,7 @@
             </button>
           </div>
 
-          <div class="text-caption mb-5">
+          <div class="text-caption mb-5" style="color:var(--color-steel);">
             Created {{ new Date(template.createdAt).toLocaleDateString() }}
           </div>
 

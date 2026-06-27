@@ -43,7 +43,7 @@
                 <input type="file" accept=".csv" @change="onCsvUpload" />
                 <span class="text-caption">CSV should have columns: name, date, certificate_id</span>
               </div>
-              <a href="/example.csv" download class="inline-block mt-2 text-body-sm text-accent hover:underline">
+              <a href="/example.csv" download class="inline-block mt-2 text-body hover:underline" style="color:var(--color-obsidian); font-weight:500;">
                 Download example CSV
               </a>
             </div>
@@ -94,15 +94,15 @@
           <h2 class="section-title mb-6">Generate</h2>
 
           <div class="space-y-4">
-            <div class="bg-bg rounded-md p-4 border border-border">
-              <div class="text-caption mb-1">Template</div>
+            <div class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
+              <div class="text-caption mb-1" style="color:var(--color-steel);">Template</div>
               <div class="text-body font-medium">
                 {{ selectedTemplateId ? templates?.find(t => t.id === selectedTemplateId)?.name : 'Not selected' }}
               </div>
             </div>
 
-            <div class="bg-bg rounded-md p-4 border border-border">
-              <div class="text-caption mb-1">Records</div>
+            <div class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
+              <div class="text-caption mb-1" style="color:var(--color-steel);">Records</div>
               <div class="text-body font-medium text-mono">{{ data.length }}</div>
             </div>
 
@@ -122,8 +122,8 @@
               {{ generating ? `Generating... (${progress}/${data.length})` : 'Generate All' }}
             </button>
 
-            <div v-if="generating" class="bg-bg rounded-md p-4 border border-border">
-              <div class="text-caption mb-2">Progress</div>
+            <div v-if="generating" class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
+              <div class="text-caption mb-2" style="color:var(--color-steel);">Progress</div>
               <div class="progress">
                 <div
                   class="progress-bar"
