@@ -494,6 +494,36 @@
                                     "
                                     class="form-group"
                                 >
+                                    <label class="form-label">Font Family</label>
+                                    <select
+                                        v-model="
+                                            layout.elements[selectedElement]
+                                                .fontFamily
+                                        "
+                                    >
+                                        <option value="">Default (Source Serif 4)</option>
+                                        <option value="'Playfair Display', serif">Playfair Display</option>
+                                        <option value="'Source Serif 4', serif">Source Serif 4</option>
+                                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                        <optgroup v-if="customFonts.length > 0" label="Custom Fonts">
+                                            <option
+                                                v-for="family in customFonts"
+                                                :key="family"
+                                                :value="`'${family}', sans-serif`"
+                                            >
+                                                {{ family }}
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <div
+                                    v-if="
+                                        layout.elements[selectedElement]
+                                            ?.type === 'text'
+                                    "
+                                    class="form-group"
+                                >
                                     <label class="form-label">Color</label>
                                     <input
                                         v-model="
@@ -915,6 +945,7 @@ interface LayoutElement {
     height: number;
     content?: string;
     fontSize?: number;
+    fontFamily?: string;
     color?: string;
     fontWeight?: string;
     fontStyle?: string;
@@ -938,6 +969,8 @@ const layout = reactive<Layout>({
 });
 
 const { data: assets } = await useFetch("/api/assets");
+const { data: fonts } = await useFetch("/api/fonts");
+
 const combinedLogos = computed(
     () =>
         assets.value?.filter(
@@ -950,6 +983,35 @@ const combinedBackgrounds = computed(
             (a) => a.type === "background" || a.type === "free-image",
         ) || [],
 );
+
+// Get unique custom font families
+const customFonts = computed(() => {
+    if (!fonts.value) return []
+    const families = new Set<string>()
+    fonts.value.forEach(font => families.add(font.fontFamily))
+    return Array.from(families).sort()
+})
+
+// Load custom fonts dynamically
+watch(fonts, (newFonts) => {
+    if (newFonts && newFonts.length > 0) {
+        newFonts.forEach(font => {
+            const fontFace = new FontFace(
+                font.fontFamily,
+                `url(${font.filepath})`,
+                {
+                    weight: font.fontWeight || '400',
+                    style: font.fontStyle || 'normal'
+                }
+            )
+            fontFace.load().then((loadedFont) => {
+                document.fonts.add(loadedFont)
+            }).catch(err => {
+                console.error(`Failed to load font ${font.fontFamily}:`, err)
+            })
+        })
+    }
+}, { immediate: true })
 
 if (!isNew.value && templateId.value) {
     const { data: template } = await useFetch(
@@ -1025,6 +1087,7 @@ function elementStyle(el: LayoutElement) {
 
 function textStyle(el: LayoutElement) {
     return {
+        fontFamily: el.fontFamily || "var(--font-body)",
         fontSize: (el.fontSize || 24) + "px",
         color: el.color || "#000000",
         fontWeight: el.fontWeight || "400",

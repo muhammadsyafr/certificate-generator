@@ -165,6 +165,28 @@ import html2canvas from 'html2canvas'
 const route = useRoute()
 
 const { data: templates } = await useFetch('/api/templates')
+const { data: fonts } = await useFetch('/api/fonts')
+
+// Load custom fonts dynamically
+watch(fonts, (newFonts) => {
+  if (newFonts && newFonts.length > 0) {
+    newFonts.forEach(font => {
+      const fontFace = new FontFace(
+        font.fontFamily,
+        `url(${font.filepath})`,
+        {
+          weight: font.fontWeight || '400',
+          style: font.fontStyle || 'normal'
+        }
+      )
+      fontFace.load().then((loadedFont) => {
+        document.fonts.add(loadedFont)
+      }).catch(err => {
+        console.error(`Failed to load font ${font.fontFamily}:`, err)
+      })
+    })
+  }
+}, { immediate: true })
 
 const selectedTemplateId = ref<number | null>(null)
 const uploadMode = ref<'csv' | 'json'>('csv')
@@ -290,6 +312,7 @@ async function renderCertificate(layout: any, data: Record<string, any>, format:
         content = content.replace(new RegExp(`{{${key}}}`, 'g'), String(value))
       }
       div.textContent = content
+      div.style.fontFamily = el.fontFamily || 'Source Serif 4, serif'
       div.style.fontSize = (el.fontSize || 24) + 'px'
       div.style.color = el.color || '#000000'
       div.style.fontWeight = el.fontWeight || '400'

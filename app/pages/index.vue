@@ -89,19 +89,20 @@
           </div>
         </div>
 
-        <!-- PDF/PNG Output: 1.5×1 -->
-        <div class="bento-card bento-card--wide-half">
+        <!-- Custom Fonts: 1.5×1 -->
+        <NuxtLink to="/templates/fonts" class="bento-card bento-card--wide-half card-hover-lift">
           <div class="bento-card__icon-small">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <path d="M14 2v6h6"/>
+              <polyline points="4 7 4 4 20 4 20 7"/>
+              <line x1="9" y1="20" x2="15" y2="20"/>
+              <line x1="12" y1="4" x2="12" y2="20"/>
             </svg>
           </div>
           <div>
-            <h4 class="bento-card__title-sm">PDF/PNG Output</h4>
-            <p class="bento-card__desc-sm">High-res files bundled in ZIP</p>
+            <h4 class="bento-card__title-sm">Custom Fonts</h4>
+            <p class="bento-card__desc-sm">Upload TTF, OTF, WOFF fonts</p>
           </div>
-        </div>
+        </NuxtLink>
       </div>
     </section>
 
