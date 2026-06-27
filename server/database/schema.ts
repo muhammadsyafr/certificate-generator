@@ -13,5 +13,6 @@ export const assets = sqliteTable('assets', {
   filename: text('filename').notNull(),
   filepath: text('filepath').notNull(), // Relative path from public/
   type: text('type').notNull(), // Dynamic: 'logo' | 'background' | 'free-image' | custom
+  metadata: text('metadata'), // JSON: { width, height, size }
   uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 })

@@ -3,6 +3,7 @@ import { assets } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
+import sharp from 'sharp'
 
 export default defineEventHandler(async (event) => {
   const method = event.method
@@ -10,7 +11,11 @@ export default defineEventHandler(async (event) => {
   // GET - List all assets
   if (method === 'GET') {
     const allAssets = await db.select().from(assets).all()
-    return allAssets
+    // Parse metadata JSON for each asset
+    return allAssets.map(asset => ({
+      ...asset,
+      metadata: asset.metadata ? JSON.parse(asset.metadata) : null
+    }))
   }
 
   // POST - Upload new asset
@@ -55,11 +60,26 @@ export default defineEventHandler(async (event) => {
     // Save file
     await writeFile(fullPath, file.data)
 
+    // Extract image metadata
+    let metadata = null
+    try {
+      const image = sharp(file.data)
+      const meta = await image.metadata()
+      metadata = JSON.stringify({
+        width: meta.width,
+        height: meta.height,
+        size: file.data.length,
+      })
+    } catch (e) {
+      console.error('Failed to extract metadata:', e)
+    }
+
     // Save to database
     const result = await db.insert(assets).values({
       filename: file.filename,
       filepath,
       type,
+      metadata,
       uploadedAt: new Date(),
     }).returning()
 
