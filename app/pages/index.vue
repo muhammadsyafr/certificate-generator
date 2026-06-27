@@ -29,10 +29,10 @@
     <!-- Bento Grid: Asymmetric Feature Cards -->
     <section class="bento-section">
       <div class="bento-grid">
-        <!-- Templates Card: 2×2 Featured -->
+        <!-- Templates Card: 1×1 -->
         <NuxtLink to="/templates" class="bento-card bento-card--featured card-hover-lift">
           <div class="bento-card__icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
             </svg>
@@ -44,10 +44,10 @@
           <span class="bento-card__link">Create template →</span>
         </NuxtLink>
 
-        <!-- Assets Card: 1×2 -->
+        <!-- Assets Card: 1×1 -->
         <NuxtLink to="/templates/assets" class="bento-card bento-card--tall card-hover-lift">
           <div class="bento-card__icon bento-card__icon--secondary">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <path d="M21 15l-5-5L5 21"/>
@@ -60,28 +60,24 @@
           <span class="bento-card__link">Manage assets →</span>
         </NuxtLink>
 
-        <!-- Bulk Generate Card: 4×1 Wide Accent -->
-        <NuxtLink to="/generate" class="bento-card bento-card--wide bento-card--accent card-hover-lift">
+        <!-- Bulk Generate Card: 1×1 -->
+        <NuxtLink to="/generate" class="bento-card bento-card--tall bento-card--accent card-hover-lift">
           <div class="bento-card__icon bento-card__icon--accent">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
           </div>
-          <div class="bento-card__content-wide">
-            <div>
-              <h3 class="bento-card__title">Bulk Generate</h3>
-              <p class="bento-card__desc">
-                Upload CSV or paste JSON. Select output format. Download a ZIP with every certificate rendered at 2× resolution.
-              </p>
-            </div>
-            <span class="bento-card__link">Start generating →</span>
-          </div>
+          <h3 class="bento-card__title">Bulk Generate</h3>
+          <p class="bento-card__desc">
+            Upload CSV or paste JSON. Select output format. Download a ZIP with every certificate rendered at 2× resolution.
+          </p>
+          <span class="bento-card__link">Start generating →</span>
         </NuxtLink>
 
-        <!-- CSV Upload: 2×1 -->
-        <div class="bento-card bento-card--horizontal">
+        <!-- CSV Upload: 1.5×1 -->
+        <div class="bento-card bento-card--wide-half">
           <div class="bento-card__icon-small">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
@@ -89,14 +85,14 @@
           </div>
           <div>
             <h4 class="bento-card__title-sm">CSV Upload</h4>
-            <p class="bento-card__desc-sm">Paste or upload your recipient data</p>
+            <p class="bento-card__desc-sm">Paste or upload recipient data</p>
           </div>
         </div>
 
-        <!-- PDF/PNG Output: 2×1 -->
-        <div class="bento-card bento-card--horizontal">
+        <!-- PDF/PNG Output: 1.5×1 -->
+        <div class="bento-card bento-card--wide-half">
           <div class="bento-card__icon-small">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
               <path d="M14 2v6h6"/>
             </svg>
@@ -227,15 +223,15 @@
 
 .bento-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
 }
 
 .bento-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
-  padding: var(--space-8);
+  padding: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -246,24 +242,21 @@
 }
 
 .bento-card--featured { 
-  grid-column: span 2; 
-  grid-row: span 2;
+  grid-column: span 1; 
+  grid-row: span 1;
+  padding: var(--space-6);
 }
 
 .bento-card--tall { 
-  grid-row: span 2; 
+  grid-row: span 1; 
 }
 
-.bento-card--wide { 
-  grid-column: span 4;
-}
-
-.bento-card--horizontal {
-  grid-column: span 2;
+.bento-card--wide-half {
+  grid-column: span 1.5;
   flex-direction: row;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-6);
+  padding: var(--space-5);
 }
 
 .bento-card--accent {
@@ -273,13 +266,14 @@
 }
 
 .card-hover-lift:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
   border-color: var(--color-primary);
 }
 
 .bento-card--accent:hover {
   border-color: transparent;
+  box-shadow: var(--shadow-lg);
 }
 
 .bento-card__icon {
@@ -290,6 +284,7 @@
   color: var(--color-primary);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
 .bento-card__icon--secondary {
@@ -303,8 +298,8 @@
 }
 
 .bento-card__icon-small {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-lg);
   background: var(--color-primary-muted);
   color: var(--color-primary);
@@ -315,7 +310,7 @@
 
 .bento-card__title {
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
+  font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
   color: inherit;
@@ -326,15 +321,20 @@
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
 }
 
 .bento-card__desc {
   font-family: var(--font-body);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--color-text-secondary);
   flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bento-card--accent .bento-card__desc {
@@ -343,7 +343,7 @@
 
 .bento-card__desc-sm {
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--leading-normal);
   color: var(--color-text-secondary);
 }
@@ -355,7 +355,7 @@
   color: var(--color-primary);
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-2);
   margin-top: auto;
 }
 
@@ -366,7 +366,7 @@
 .bento-card__content-wide {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
+  gap: var(--space-10);
   justify-content: space-between;
 }
 
@@ -453,16 +453,19 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .bento-grid { grid-template-columns: repeat(2, 1fr); }
-  .bento-card--wide { grid-column: span 2; }
-  .bento-card__content-wide { flex-direction: column; align-items: flex-start; }
+  .bento-card--wide-half { grid-column: span 1; }
   .workflow-steps { grid-template-columns: 1fr; gap: var(--space-8); }
 }
 
 @media (max-width: 640px) {
   .bento-grid { grid-template-columns: 1fr; }
-  .bento-card--featured, .bento-card--tall, .bento-card--wide, .bento-card--horizontal {
+  .bento-card--featured, .bento-card--tall, .bento-card--wide-half {
     grid-column: span 1;
     grid-row: span 1;
+  }
+  .bento-card--wide-half {
+    flex-direction: column;
+    align-items: flex-start;
   }
   .hero-cta { flex-direction: column; width: 100%; }
   .hero-cta .btn-primary, .hero-cta .btn-ghost { width: 100%; }

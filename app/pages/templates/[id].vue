@@ -1,13 +1,44 @@
 <template>
-    <div class="fixed inset-0 flex flex-col bg-white">
+    <div
+        class="fixed inset-0 flex flex-col"
+        style="background: var(--color-bg)"
+    >
         <header
-            class="flex justify-between items-center px-8 py-4 border-b border-border flex-shrink-0"
+            class="flex justify-between items-center border-b flex-shrink-0"
+            style="
+                padding: var(--space-5) var(--space-8);
+                border-color: var(--color-border);
+            "
         >
             <div>
-                <NuxtLink to="/templates" class="back-link"
-                    >← Back to Templates</NuxtLink
+                <NuxtLink
+                    to="/templates"
+                    class="inline-flex items-center"
+                    style="
+                        gap: var(--space-2);
+                        margin-bottom: var(--space-2);
+                        color: var(--color-text-secondary);
+                        font-size: var(--text-sm);
+                        font-weight: var(--weight-medium);
+                        transition: color var(--duration-fast)
+                            var(--ease-standard);
+                    "
                 >
-                <h1 class="page-title">
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                    <span>Back to Templates</span>
+                </NuxtLink>
+                <h1 class="text-heading-sm" style="color: var(--color-text)">
                     {{ isNew ? "New Template" : "Edit Template" }}
                 </h1>
             </div>
@@ -26,32 +57,82 @@
                 :style="{ width: settingsVisible ? '80%' : '100%' }"
             >
                 <div
-                    class="flex justify-between items-center px-6 py-4 border-b border-border flex-shrink-0"
+                    class="flex justify-between items-center border-b flex-shrink-0"
+                    style="
+                        padding: var(--space-4) var(--space-6);
+                        border-color: var(--color-border);
+                    "
                 >
-                    <h4 class="section-title">Canvas Preview</h4>
-                    <div class="flex gap-2 flex-wrap">
+                    <h4
+                        class="text-body-sm"
+                        style="
+                            font-weight: var(--weight-semibold);
+                            color: var(--color-text-secondary);
+                        "
+                    >
+                        Canvas Preview
+                    </h4>
+                    <div
+                        class="flex"
+                        style="gap: var(--space-2); flex-wrap: wrap"
+                    >
                         <button
                             @click="zoomOut"
                             class="btn-ghost btn-sm"
                             title="Zoom Out"
+                            style="
+                                width: 36px;
+                                height: 36px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 18px;
+                                font-weight: var(--weight-medium);
+                            "
                         >
                             −
                         </button>
                         <span
-                            class="text-body-sm px-3 py-1.5"
-                            style="color: var(--color-steel)"
+                            class="text-body-sm"
+                            style="
+                                padding: var(--space-2) var(--space-3);
+                                color: var(--color-text-secondary);
+                                display: flex;
+                                align-items: center;
+                                font-weight: var(--weight-medium);
+                                min-width: 60px;
+                                justify-content: center;
+                            "
                             >{{ Math.round(zoom * 100) }}%</span
                         >
                         <button
                             @click="zoomIn"
                             class="btn-ghost btn-sm"
                             title="Zoom In"
+                            style="
+                                width: 36px;
+                                height: 36px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 18px;
+                                font-weight: var(--weight-medium);
+                            "
                         >
                             +
                         </button>
+                        <div
+                            style="
+                                width: 1px;
+                                height: 32px;
+                                background: var(--color-border);
+                                margin: 0 var(--space-1);
+                            "
+                        ></div>
                         <button
                             @click="fullscreen = !fullscreen"
-                            class="btn-ghost btn-sm ml-2"
+                            class="btn-ghost btn-sm"
+                            style="padding: var(--space-2) var(--space-4)"
                         >
                             {{ fullscreen ? "Exit Fullscreen" : "Fullscreen" }}
                         </button>
@@ -59,8 +140,11 @@
                 </div>
                 <div
                     ref="canvasContainerRef"
-                    class="flex-1 overflow-auto p-8"
-                    style="background: var(--color-snow)"
+                    class="flex-1 overflow-auto"
+                    style="
+                        background: var(--color-surface-hover);
+                        padding: var(--space-8);
+                    "
                 >
                     <div :style="canvasStyle" class="relative">
                         <div v-if="layout.background" class="absolute inset-0">
@@ -91,57 +175,57 @@
                             />
                             <template v-if="selectedElement === idx">
                                 <div
-                                    class="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nwse-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nwse-resize"
+                                    style="top: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'nw', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nesw-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nesw-resize"
+                                    style="top: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'ne', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nesw-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nesw-resize"
+                                    style="bottom: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'sw', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nwse-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nwse-resize"
+                                    style="bottom: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'se', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 rounded-full cursor-ew-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                    style="left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'w', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 rounded-full cursor-ew-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                    style="right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'e', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 rounded-full cursor-ns-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                    style="top: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'n', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rounded-full cursor-ns-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                    style="bottom: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 's', $event)
                                     "
@@ -153,16 +237,20 @@
 
                 <button
                     @click="settingsVisible = !settingsVisible"
-                    class="fixed bottom-6 right-6 z-10 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+                    class="fixed z-10 rounded-full shadow-lg flex items-center justify-center transition-all"
                     style="
-                        background: var(--color-obsidian);
-                        color: var(--color-snow);
+                        bottom: var(--space-8);
+                        right: var(--space-8);
+                        width: 56px;
+                        height: 56px;
+                        background: var(--color-primary);
+                        color: var(--color-surface);
+                        box-shadow: var(--shadow-lg);
                     "
                     :title="settingsVisible ? 'Hide Settings' : 'Show Settings'"
                 >
                     <svg
                         v-if="settingsVisible"
-                        xmlns="http://www.w3.org/2000/svg"
                         width="20"
                         height="20"
                         viewBox="0 0 24 24"
@@ -176,7 +264,6 @@
                     </svg>
                     <svg
                         v-else
-                        xmlns="http://www.w3.org/2000/svg"
                         width="20"
                         height="20"
                         viewBox="0 0 24 24"
@@ -194,13 +281,29 @@
             <Transition name="slide">
                 <div
                     v-if="settingsVisible"
-                    class="flex flex-col border-l border-border overflow-y-auto"
-                    style="width: 20%; min-width: 320px"
+                    class="flex flex-col border-l overflow-y-auto"
+                    style="
+                        width: 20%;
+                        min-width: 380px;
+                        border-color: var(--color-border);
+                        background: var(--color-surface);
+                    "
                 >
-                    <div class="p-6">
-                        <h2 class="section-title mb-6">Template Settings</h2>
+                    <div style="padding: var(--space-8)">
+                        <h2
+                            class="text-heading-sm"
+                            style="margin-bottom: var(--space-8)"
+                        >
+                            Template Settings
+                        </h2>
 
-                        <div class="space-y-5">
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                gap: var(--space-6);
+                            "
+                        >
                             <div class="form-group">
                                 <label class="form-label">Template Name</label>
                                 <input
@@ -246,17 +349,43 @@
                                 </select>
                             </div>
 
-                            <hr />
+                            <hr style="border-color: var(--color-border)" />
 
-                            <h3 class="text-body font-semibold">
+                            <h3
+                                class="text-body"
+                                style="
+                                    font-weight: var(--weight-semibold);
+                                    color: var(--color-text);
+                                "
+                            >
                                 Add Elements
                             </h3>
 
                             <button
                                 @click="addTextElement"
-                                class="btn-primary w-full"
+                                class="btn-primary"
+                                style="
+                                    width: 100%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: var(--space-2);
+                                "
                             >
-                                + Add Text Element
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add Text Element
                             </button>
 
                             <div class="form-group">
@@ -273,19 +402,35 @@
                                 </select>
                             </div>
 
-                            <hr />
+                            <hr style="border-color: var(--color-border)" />
 
                             <div
                                 v-if="selectedElement !== null"
-                                class="space-y-5"
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: var(--space-6);
+                                "
                             >
                                 <div class="flex justify-between items-center">
-                                    <h3 class="text-body font-semibold">
+                                    <h3
+                                        class="text-body"
+                                        style="
+                                            font-weight: var(--weight-semibold);
+                                            color: var(--color-text);
+                                        "
+                                    >
                                         Element Properties
                                     </h3>
                                     <button
                                         @click="deleteElement"
-                                        class="btn-ghost btn-danger"
+                                        class="btn-ghost"
+                                        style="
+                                            color: var(--color-danger);
+                                            padding: var(--space-2)
+                                                var(--space-3);
+                                            font-size: var(--text-sm);
+                                        "
                                     >
                                         Delete
                                     </button>
@@ -305,12 +450,19 @@
                                                 .content
                                         "
                                         rows="3"
-                                        class="font-mono text-body-sm"
+                                        style="
+                                            font-family: var(--font-mono);
+                                            font-size: var(--text-sm);
+                                        "
                                         placeholder="Use {{name}}, {{date}}, {{certificate_id}}"
                                     ></textarea>
                                     <span
                                         class="text-caption"
-                                        style="color: var(--color-steel)"
+                                        style="
+                                            color: var(--color-text-muted);
+                                            display: block;
+                                            margin-top: var(--space-2);
+                                        "
                                         >Placeholders: {{ name }}, {{ date }},
                                         {{ certificate_id }}</span
                                     >
@@ -368,25 +520,12 @@
                                                 .fontWeight
                                         "
                                     >
-                                        <option value="100">Thin (100)</option>
-                                        <option value="200">
-                                            Extra Light (200)
-                                        </option>
-                                        <option value="300">Light (300)</option>
-                                        <option value="400">
-                                            Normal (400)
-                                        </option>
-                                        <option value="500">
-                                            Medium (500)
-                                        </option>
-                                        <option value="600">
-                                            Semi Bold (600)
-                                        </option>
-                                        <option value="700">Bold (700)</option>
-                                        <option value="800">
-                                            Extra Bold (800)
-                                        </option>
-                                        <option value="900">Black (900)</option>
+                                        <option value="300">Light</option>
+                                        <option value="400">Normal</option>
+                                        <option value="500">Medium</option>
+                                        <option value="600">Semi Bold</option>
+                                        <option value="700">Bold</option>
+                                        <option value="900">Black</option>
                                     </select>
                                 </div>
 
@@ -443,7 +582,7 @@
                                     class="form-group"
                                 >
                                     <label class="form-label">Text Align</label>
-                                    <div class="flex gap-2">
+                                    <div class="tabs">
                                         <button
                                             @click="
                                                 layout.elements[
@@ -451,22 +590,14 @@
                                                 ].textAlign = 'left'
                                             "
                                             :class="[
-                                                'flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150',
+                                                'tab',
                                                 (layout.elements[
                                                     selectedElement
                                                 ].textAlign || 'left') ===
                                                 'left'
-                                                    ? 'text-snow'
-                                                    : 'border border-border',
+                                                    ? 'tab-active'
+                                                    : '',
                                             ]"
-                                            :style="
-                                                (layout.elements[
-                                                    selectedElement
-                                                ].textAlign || 'left') ===
-                                                'left'
-                                                    ? 'background:var(--color-obsidian); color:var(--color-snow);'
-                                                    : 'background:var(--color-mist); color:var(--color-steel);'
-                                            "
                                         >
                                             Left
                                         </button>
@@ -477,18 +608,12 @@
                                                 ].textAlign = 'center'
                                             "
                                             :class="[
-                                                'flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150',
+                                                'tab',
                                                 layout.elements[selectedElement]
                                                     .textAlign === 'center'
-                                                    ? 'text-snow'
-                                                    : 'border border-border',
+                                                    ? 'tab-active'
+                                                    : '',
                                             ]"
-                                            :style="
-                                                layout.elements[selectedElement]
-                                                    .textAlign === 'center'
-                                                    ? 'background:var(--color-obsidian); color:var(--color-snow);'
-                                                    : 'background:var(--color-mist); color:var(--color-steel);'
-                                            "
                                         >
                                             Center
                                         </button>
@@ -499,18 +624,12 @@
                                                 ].textAlign = 'right'
                                             "
                                             :class="[
-                                                'flex-1 py-2 px-3 rounded-xl text-body-sm font-medium transition-all duration-150',
+                                                'tab',
                                                 layout.elements[selectedElement]
                                                     .textAlign === 'right'
-                                                    ? 'text-snow'
-                                                    : 'border border-border',
+                                                    ? 'tab-active'
+                                                    : '',
                                             ]"
-                                            :style="
-                                                layout.elements[selectedElement]
-                                                    .textAlign === 'right'
-                                                    ? 'background:var(--color-obsidian); color:var(--color-snow);'
-                                                    : 'background:var(--color-mist); color:var(--color-steel);'
-                                            "
                                         >
                                             Right
                                         </button>
@@ -538,6 +657,11 @@
                                             type="number"
                                             placeholder="Y"
                                         />
+                                    </div>
+                                    <div
+                                        class="form-row"
+                                        style="margin-top: var(--space-3)"
+                                    >
                                         <input
                                             v-model.number="
                                                 layout.elements[selectedElement]
@@ -566,36 +690,109 @@
         <Teleport to="body">
             <div
                 v-if="fullscreen"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center"
+                style="
+                    background: rgba(0, 0, 0, 0.95);
+                    backdrop-filter: blur(8px);
+                "
                 @click.self="fullscreen = false"
             >
-                <div class="absolute top-4 right-4 flex gap-2">
+                <div
+                    class="absolute flex"
+                    style="
+                        top: var(--space-6);
+                        right: var(--space-6);
+                        gap: var(--space-3);
+                    "
+                >
                     <button
                         @click="zoomOut"
-                        class="btn-ghost text-white hover:bg-white/10"
+                        class="btn-ghost"
+                        style="
+                            color: white;
+                            background: rgba(255, 255, 255, 0.1);
+                            width: 40px;
+                            height: 40px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 20px;
+                            font-weight: var(--weight-medium);
+                        "
                         title="Zoom Out"
                     >
                         −
                     </button>
-                    <span class="text-white px-3 py-1.5"
+                    <span
+                        style="
+                            color: white;
+                            padding: var(--space-2) var(--space-4);
+                            display: flex;
+                            align-items: center;
+                            font-size: var(--text-sm);
+                            font-weight: var(--weight-medium);
+                            background: rgba(255, 255, 255, 0.1);
+                            border-radius: var(--radius-lg);
+                        "
                         >{{ Math.round(zoom * 100) }}%</span
                     >
                     <button
                         @click="zoomIn"
-                        class="btn-ghost text-white hover:bg-white/10"
+                        class="btn-ghost"
+                        style="
+                            color: white;
+                            background: rgba(255, 255, 255, 0.1);
+                            width: 40px;
+                            height: 40px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 20px;
+                            font-weight: var(--weight-medium);
+                        "
                         title="Zoom In"
                     >
                         +
                     </button>
+                    <div
+                        style="
+                            width: 1px;
+                            background: rgba(255, 255, 255, 0.2);
+                            margin: 0 var(--space-1);
+                        "
+                    ></div>
                     <button
                         @click="fullscreen = false"
-                        class="btn-ghost text-white hover:bg-white/10 text-body ml-2"
+                        class="btn-ghost"
+                        style="
+                            color: white;
+                            background: rgba(255, 255, 255, 0.1);
+                            padding: var(--space-2) var(--space-5);
+                            display: flex;
+                            align-items: center;
+                            gap: var(--space-2);
+                            font-size: var(--text-sm);
+                        "
                     >
-                        ✕ Close
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        Close
                     </button>
                 </div>
                 <div
-                    class="overflow-auto w-full h-full flex items-center justify-center p-8"
+                    class="overflow-auto w-full h-full flex items-center justify-center"
+                    style="padding: var(--space-8)"
                 >
                     <div
                         :style="fullscreenCanvasStyle"
@@ -630,57 +827,57 @@
                             />
                             <template v-if="selectedElement === idx">
                                 <div
-                                    class="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nwse-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nwse-resize"
+                                    style="top: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'nw', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nesw-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nesw-resize"
+                                    style="top: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'ne', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full cursor-nesw-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nesw-resize"
+                                    style="bottom: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'sw', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full cursor-nwse-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute rounded-full cursor-nwse-resize"
+                                    style="bottom: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'se', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 rounded-full cursor-ew-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                    style="left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'w', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 rounded-full cursor-ew-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                    style="right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'e', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 rounded-full cursor-ns-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                    style="top: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 'n', $event)
                                     "
                                 ></div>
                                 <div
-                                    class="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rounded-full cursor-ns-resize"
-                                    style="background: var(--color-obsidian)"
+                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                    style="bottom: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
                                     @mousedown.stop="
                                         startResize(idx, 's', $event)
                                     "

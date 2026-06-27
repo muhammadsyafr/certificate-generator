@@ -1,16 +1,21 @@
 <template>
   <div class="page">
     <div class="page-container">
-      <header class="page-header">
-        <NuxtLink to="/" class="back-link">← Back</NuxtLink>
-        <h1 class="page-title">Bulk Generate Certificates</h1>
-        <p class="page-desc">Upload CSV or JSON data to generate multiple certificates at once</p>
+      <header style="padding-top: var(--space-10); padding-bottom: var(--space-8); margin-bottom: var(--space-8);">
+        <NuxtLink to="/" class="inline-flex items-center" style="gap: var(--space-2); margin-bottom: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); font-weight: var(--weight-medium); transition: color var(--duration-fast) var(--ease-standard);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span>Back</span>
+        </NuxtLink>
+        <h1 class="text-heading-lg" style="margin-bottom: var(--space-3);">Bulk Generate Certificates</h1>
+        <p class="text-body" style="color: var(--color-text-secondary);">Upload CSV or JSON data to generate multiple certificates at once</p>
       </header>
 
-      <div class="grid lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 space-y-6">
-          <div class="card">
-            <h2 class="section-title mb-5">Select Template</h2>
+      <div class="grid lg:grid-cols-3" style="gap: var(--space-8);">
+        <div class="lg:col-span-2" style="display: flex; flex-direction: column; gap: var(--space-8);">
+          <div class="card" style="padding: var(--space-8);">
+            <h2 class="text-heading-sm" style="margin-bottom: var(--space-6);">Select Template</h2>
             <select v-model="selectedTemplateId">
               <option value="">Choose a template...</option>
               <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
@@ -19,10 +24,10 @@
             </select>
           </div>
 
-          <div class="card">
-            <h2 class="section-title mb-5">Upload Data</h2>
+          <div class="card" style="padding: var(--space-8);">
+            <h2 class="text-heading-sm" style="margin-bottom: var(--space-6);">Upload Data</h2>
 
-            <div class="tabs mb-5">
+            <div class="tabs" style="margin-bottom: var(--space-6);">
               <button
                 @click="uploadMode = 'csv'"
                 :class="['tab', uploadMode === 'csv' && 'tab-active']"
@@ -41,9 +46,14 @@
               <div class="form-group">
                 <label class="form-label">Upload CSV File</label>
                 <input type="file" accept=".csv" @change="onCsvUpload" />
-                <span class="text-caption">CSV should have columns: name, date, certificate_id</span>
+                <span class="text-caption" style="color: var(--color-text-muted); display: block; margin-top: var(--space-2);">CSV should have columns: name, date, certificate_id</span>
               </div>
-              <a href="/example.csv" download class="inline-block mt-2 text-body hover:underline" style="color:var(--color-obsidian); font-weight:500;">
+              <a href="/example.csv" download class="inline-flex items-center" style="margin-top: var(--space-3); color: var(--color-primary); font-weight: var(--weight-medium); font-size: var(--text-sm); gap: var(--space-2); transition: color var(--duration-fast) var(--ease-standard);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
                 Download example CSV
               </a>
             </div>
@@ -54,20 +64,20 @@
                 <textarea
                   v-model="jsonInput"
                   rows="8"
-                  class="font-mono text-body-sm"
+                  style="font-family: var(--font-mono); font-size: var(--text-sm);"
                   placeholder='[{"name": "John Doe", "date": "2026-06-27", "certificate_id": "CERT-001"}]'
                 ></textarea>
               </div>
-              <button @click="parseJson" class="btn-primary mt-3">
+              <button @click="parseJson" class="btn-primary" style="margin-top: var(--space-4);">
                 Parse JSON
               </button>
             </div>
           </div>
 
-          <div v-if="data.length > 0" class="card">
-            <div class="section-head mb-5">
-              <h2 class="section-title">Data Preview ({{ data.length }} records)</h2>
-              <button @click="clearData" class="btn-ghost">Clear</button>
+          <div v-if="data.length > 0" class="card" style="padding: var(--space-8);">
+            <div class="flex justify-between items-center" style="margin-bottom: var(--space-6);">
+              <h2 class="text-heading-sm">Data Preview <span style="color: var(--color-text-muted); font-weight: var(--weight-normal);">({{ data.length }} records)</span></h2>
+              <button @click="clearData" class="btn-ghost" style="padding: var(--space-2) var(--space-3); font-size: var(--text-sm);">Clear</button>
             </div>
 
             <div class="table-wrap">
@@ -84,26 +94,26 @@
                 </tbody>
               </table>
             </div>
-            <p v-if="data.length > 10" class="text-caption mt-3">
+            <p v-if="data.length > 10" class="text-caption" style="margin-top: var(--space-4); color: var(--color-text-muted);">
               Showing first 10 of {{ data.length }} records
             </p>
           </div>
         </div>
 
-        <div class="card h-fit">
-          <h2 class="section-title mb-6">Generate</h2>
+        <div class="card" style="padding: var(--space-8); height: fit-content;">
+          <h2 class="text-heading-sm" style="margin-bottom: var(--space-8);">Generate</h2>
 
-          <div class="space-y-4">
-            <div class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
-              <div class="text-caption mb-1" style="color:var(--color-steel);">Template</div>
-              <div class="text-body font-medium">
+          <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+            <div style="border-radius: var(--radius-xl); padding: var(--space-5); border: 1px solid var(--color-border); background: var(--color-surface-hover);">
+              <div class="text-caption" style="color: var(--color-text-muted); margin-bottom: var(--space-2);">Template</div>
+              <div class="text-body" style="font-weight: var(--weight-medium);">
                 {{ selectedTemplateId ? templates?.find(t => t.id === selectedTemplateId)?.name : 'Not selected' }}
               </div>
             </div>
 
-            <div class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
-              <div class="text-caption mb-1" style="color:var(--color-steel);">Records</div>
-              <div class="text-body font-medium text-mono">{{ data.length }}</div>
+            <div style="border-radius: var(--radius-xl); padding: var(--space-5); border: 1px solid var(--color-border); background: var(--color-surface-hover);">
+              <div class="text-caption" style="color: var(--color-text-muted); margin-bottom: var(--space-2);">Records</div>
+              <div class="text-body" style="font-weight: var(--weight-medium); font-family: var(--font-mono);">{{ data.length }}</div>
             </div>
 
             <div class="form-group">
@@ -117,20 +127,27 @@
             <button
               @click="generateBulk"
               :disabled="!selectedTemplateId || data.length === 0 || generating"
-              class="btn-primary btn-lg w-full"
+              class="btn-primary btn-lg"
+              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-2);"
             >
+              <svg v-if="!generating" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 16 12 12 8 16"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                <polyline points="16 16 12 12 8 16"/>
+              </svg>
               {{ generating ? `Generating... (${progress}/${data.length})` : 'Generate All' }}
             </button>
 
-            <div v-if="generating" class="rounded-xl p-4 border border-border" style="background:var(--color-mist);">
-              <div class="text-caption mb-2" style="color:var(--color-steel);">Progress</div>
+            <div v-if="generating" style="border-radius: var(--radius-xl); padding: var(--space-5); border: 1px solid var(--color-border); background: var(--color-surface-hover);">
+              <div class="text-caption" style="color: var(--color-text-muted); margin-bottom: var(--space-3);">Progress</div>
               <div class="progress">
                 <div
                   class="progress-bar"
                   :style="{ width: (progress / data.length * 100) + '%' }"
                 ></div>
               </div>
-              <div class="text-caption text-right mt-1 text-mono">{{ progress }}/{{ data.length }}</div>
+              <div class="text-caption" style="text-align: right; margin-top: var(--space-2); font-family: var(--font-mono);">{{ progress }}/{{ data.length }}</div>
             </div>
           </div>
         </div>
