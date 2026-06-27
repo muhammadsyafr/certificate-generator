@@ -293,8 +293,8 @@ interface Layout {
 }
 
 const layout = reactive<Layout>({
-  width: 1400,
-  height: 990,
+  width: 1754,
+  height: 1240,
   background: '',
   elements: [],
 })
@@ -453,11 +453,49 @@ function onDrag(event: MouseEvent) {
   } else if (dragState.mode === 'resize' && dragState.dir) {
     const el = layout.elements[dragState.idx]
     const dir = dragState.dir
+    const lockAspectRatio = event.shiftKey
+    const aspectRatio = dragState.elW / dragState.elH
 
-    if (dir.includes('e')) el.width = Math.max(20, Math.round(dragState.elW + dx))
-    if (dir.includes('w')) { el.width = Math.max(20, Math.round(dragState.elW - dx)); el.x = Math.round(dragState.elX + dx) }
-    if (dir.includes('s')) el.height = Math.max(20, Math.round(dragState.elH + dy))
-    if (dir.includes('n')) { el.height = Math.max(20, Math.round(dragState.elH - dy)); el.y = Math.round(dragState.elY + dy) }
+    if (lockAspectRatio) {
+      // Preserve aspect ratio when Shift is held
+      if (dir === 'e') {
+        el.width = Math.max(20, Math.round(dragState.elW + dx))
+        el.height = Math.round(el.width / aspectRatio)
+      } else if (dir === 'w') {
+        el.width = Math.max(20, Math.round(dragState.elW - dx))
+        el.height = Math.round(el.width / aspectRatio)
+        el.x = Math.round(dragState.elX + (dragState.elW - el.width))
+      } else if (dir === 's') {
+        el.height = Math.max(20, Math.round(dragState.elH + dy))
+        el.width = Math.round(el.height * aspectRatio)
+      } else if (dir === 'n') {
+        el.height = Math.max(20, Math.round(dragState.elH - dy))
+        el.width = Math.round(el.height * aspectRatio)
+        el.y = Math.round(dragState.elY + (dragState.elH - el.height))
+      } else if (dir === 'se') {
+        el.width = Math.max(20, Math.round(dragState.elW + dx))
+        el.height = Math.round(el.width / aspectRatio)
+      } else if (dir === 'sw') {
+        el.width = Math.max(20, Math.round(dragState.elW - dx))
+        el.height = Math.round(el.width / aspectRatio)
+        el.x = Math.round(dragState.elX + (dragState.elW - el.width))
+      } else if (dir === 'ne') {
+        el.width = Math.max(20, Math.round(dragState.elW + dx))
+        el.height = Math.round(el.width / aspectRatio)
+        el.y = Math.round(dragState.elY + (dragState.elH - el.height))
+      } else if (dir === 'nw') {
+        el.width = Math.max(20, Math.round(dragState.elW - dx))
+        el.height = Math.round(el.width / aspectRatio)
+        el.x = Math.round(dragState.elX + (dragState.elW - el.width))
+        el.y = Math.round(dragState.elY + (dragState.elH - el.height))
+      }
+    } else {
+      // Free resize when Shift not held
+      if (dir.includes('e')) el.width = Math.max(20, Math.round(dragState.elW + dx))
+      if (dir.includes('w')) { el.width = Math.max(20, Math.round(dragState.elW - dx)); el.x = Math.round(dragState.elX + dx) }
+      if (dir.includes('s')) el.height = Math.max(20, Math.round(dragState.elH + dy))
+      if (dir.includes('n')) { el.height = Math.max(20, Math.round(dragState.elH - dy)); el.y = Math.round(dragState.elY + dy) }
+    }
   }
 }
 
