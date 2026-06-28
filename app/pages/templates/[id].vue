@@ -146,13 +146,23 @@
                         padding: var(--space-8);
                     "
                 >
-                    <div :style="canvasStyle" class="relative">
-                        <div v-if="layout.background" class="absolute inset-0">
+                    <div :style="canvasStyle" class="relative" @click.self="selectedElement = null">
+                        <div v-if="layout.background" class="absolute inset-0 pointer-events-none">
                             <img
                                 :src="layout.background"
                                 class="w-full h-full object-contain"
                             />
                         </div>
+                        <div
+                            v-if="selectedElement !== null"
+                            class="absolute inset-0 pointer-events-none z-10"
+                            style="
+                                background-image:
+                                    linear-gradient(rgba(201, 168, 76, 0.15) 1px, transparent 1px),
+                                    linear-gradient(90deg, rgba(201, 168, 76, 0.15) 1px, transparent 1px);
+                                background-size: 20px 20px;
+                            "
+                        ></div>
 
                         <div
                             v-for="(el, idx) in layout.elements"
@@ -386,6 +396,25 @@
                                 </select>
                             </div>
 
+                            <div class="form-group">
+                                <label class="form-label"
+                                    >Background Color</label
+                                >
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    <input
+                                        v-model="layout.backgroundColor"
+                                        type="color"
+                                        style="width: 40px; height: 40px; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer;"
+                                    />
+                                    <input
+                                        v-model="layout.backgroundColor"
+                                        type="text"
+                                        placeholder="#ffffff"
+                                        style="font-family: monospace; flex: 1;"
+                                    />
+                                </div>
+                            </div>
+
                             <hr style="border-color: var(--color-border)" />
 
                             <h3
@@ -428,7 +457,7 @@
                             <div class="form-group">
                                 <label class="form-label">Add Image</label>
                                 <select @change="addImageElement($event)">
-                                    <option value="">Select logo...</option>
+                                    <option value="">Select image...</option>
                                     <option
                                         v-for="logo in combinedLogos"
                                         :key="logo.id"
@@ -765,11 +794,11 @@
                 @click.self="fullscreen = false"
             >
                 <div
-                    class="absolute flex"
+                    class="absolute flex items-center"
                     style="
-                        top: var(--space-6);
-                        right: var(--space-6);
-                        gap: var(--space-3);
+                        top: var(--space-4);
+                        right: var(--space-4);
+                        gap: var(--space-2);
                     "
                 >
                     <button
@@ -778,13 +807,14 @@
                         style="
                             color: white;
                             background: rgba(255, 255, 255, 0.1);
-                            width: 40px;
-                            height: 40px;
+                            width: 32px;
+                            height: 32px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            font-size: 20px;
+                            font-size: 16px;
                             font-weight: var(--weight-medium);
+                            border-radius: var(--radius-lg);
                         "
                         title="Zoom Out"
                     >
@@ -793,13 +823,14 @@
                     <span
                         style="
                             color: white;
-                            padding: var(--space-2) var(--space-4);
+                            padding: 2px var(--space-3);
                             display: flex;
                             align-items: center;
-                            font-size: var(--text-sm);
+                            font-size: 12px;
                             font-weight: var(--weight-medium);
                             background: rgba(255, 255, 255, 0.1);
                             border-radius: var(--radius-lg);
+                            height: 32px;
                         "
                         >{{ Math.round(zoom * 100) }}%</span
                     >
@@ -809,41 +840,44 @@
                         style="
                             color: white;
                             background: rgba(255, 255, 255, 0.1);
-                            width: 40px;
-                            height: 40px;
+                            width: 32px;
+                            height: 32px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            font-size: 20px;
+                            font-size: 16px;
                             font-weight: var(--weight-medium);
+                            border-radius: var(--radius-lg);
                         "
                         title="Zoom In"
                     >
                         +
                     </button>
-                    <div
+                    <span
                         style="
                             width: 1px;
+                            height: 20px;
                             background: rgba(255, 255, 255, 0.2);
-                            margin: 0 var(--space-1);
                         "
-                    ></div>
+                    ></span>
                     <button
                         @click="fullscreen = false"
                         class="btn-ghost"
                         style="
                             color: white;
                             background: rgba(255, 255, 255, 0.1);
-                            padding: var(--space-2) var(--space-5);
+                            width: 32px;
+                            height: 32px;
                             display: flex;
                             align-items: center;
-                            gap: var(--space-2);
-                            font-size: var(--text-sm);
+                            justify-content: center;
+                            border-radius: var(--radius-lg);
                         "
+                        title="Close"
                     >
                         <svg
-                            width="16"
-                            height="16"
+                            width="14"
+                            height="14"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -854,7 +888,6 @@
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
-                        Close
                     </button>
                 </div>
                 <div
@@ -1063,6 +1096,7 @@ interface Layout {
     width: number;
     height: number;
     background: string;
+    backgroundColor: string;
     elements: LayoutElement[];
 }
 
@@ -1070,6 +1104,7 @@ const layout = reactive<Layout>({
     width: 1754,
     height: 1240,
     background: "",
+    backgroundColor: "#ffffff",
     elements: [],
 });
 
@@ -1234,6 +1269,7 @@ const canvasStyle = computed(() => ({
     height: layout.height + "px",
     transform: `scale(${scale.value})`,
     transformOrigin: "top left",
+    background: layout.backgroundColor,
 }));
 
 const fullscreenCanvasStyle = computed(() => ({
@@ -1241,6 +1277,7 @@ const fullscreenCanvasStyle = computed(() => ({
     height: layout.height + "px",
     transform: `scale(${scale.value})`,
     transformOrigin: "center center",
+    background: layout.backgroundColor,
 }));
 
 function elementStyle(el: LayoutElement) {
