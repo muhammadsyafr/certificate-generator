@@ -4,7 +4,13 @@
         <section class="hero-section">
             <div class="hero-content">
                 <div class="brand-mark">
-                    <img src="/perunggu.png" alt="Certificate Generator" width="72" height="72" style="border-radius: var(--radius-xl);" />
+                    <img
+                        src="/badge.png"
+                        alt="Certificate Generator"
+                        width="72"
+                        height="72"
+                        style="border-radius: var(--radius-xl)"
+                    />
                 </div>
                 <p class="brand-subtitle anim-fade-up">Certificate Generator</p>
 
@@ -314,12 +320,12 @@ const workflowRef = ref<HTMLElement | null>(null);
 const ctaRef = ref<HTMLElement | null>(null);
 
 interface RevealedState {
-  stats: boolean
-  heading: boolean
-  capabilities: boolean[]
-  howHeading: boolean
-  steps: boolean[]
-  cta: boolean
+    stats: boolean;
+    heading: boolean;
+    capabilities: boolean[];
+    howHeading: boolean;
+    steps: boolean[];
+    cta: boolean;
 }
 
 const revealed = ref<RevealedState>({
@@ -360,10 +366,10 @@ onMounted(() => {
                     revealed.value.howHeading = true;
                 } else if (el.dataset.reveal === "cap") {
                     const idx = parseInt(el.dataset.capIndex || "0", 10);
-                    revealed.value.capabilities[idx] = true
+                    revealed.value.capabilities[idx] = true;
                 } else if (el.dataset.reveal === "step") {
                     const idx = parseInt(el.dataset.stepIndex || "0", 10);
-                    revealed.value.steps[idx] = true
+                    revealed.value.steps[idx] = true;
                 }
             }
         },
