@@ -955,6 +955,66 @@
                 </div>
             </div>
         </Teleport>
+
+        <Teleport to="body">
+            <Transition name="modal">
+                <div
+                    v-if="showUnsavedModal"
+                    class="fixed inset-0 z-[9999] flex items-center justify-center"
+                    style="background: hsla(0, 0%, 5%, 0.45); backdrop-filter: blur(4px);"
+                    @click.self="cancelLeave"
+                >
+                    <div
+                        class="surface-raised"
+                        style="
+                            max-width: 420px;
+                            width: calc(100% - 2rem);
+                            padding: var(--space-8);
+                            box-shadow: var(--shadow-lg);
+                        "
+                    >
+                        <div style="margin-bottom: var(--space-5);">
+                            <h2
+                                class="text-heading-sm"
+                                style="margin-bottom: var(--space-3); color: var(--color-text);"
+                            >
+                                Unsaved Changes
+                            </h2>
+                            <p
+                                style="
+                                    color: var(--color-text-secondary);
+                                    font-size: var(--text-sm);
+                                    line-height: var(--leading-relaxed);
+                                "
+                            >
+                                You have unsaved changes. If you leave now, your
+                                changes will be lost.
+                            </p>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                justify-content: flex-end;
+                                gap: var(--space-3);
+                            "
+                        >
+                            <button
+                                @click="cancelLeave"
+                                class="btn-secondary"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                @click="confirmLeave"
+                                class="btn-danger"
+                            >
+                                Discard Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 
@@ -979,6 +1039,8 @@ const contextMenu = ref({
     y: 0,
     elementIndex: null as number | null
 });
+const showUnsavedModal = ref(false);
+const pendingNavigation = ref<any>(null);
 
 interface LayoutElement {
     type: "text" | "image";
@@ -1066,6 +1128,68 @@ if (!isNew.value && templateId.value) {
         Object.assign(layout, savedLayout);
     }
 }
+
+// Track changes for unsaved warning
+const hasUnsavedChanges = ref(false)
+const initialState = ref('')
+
+// Store initial state after loading
+onMounted(() => {
+    initialState.value = JSON.stringify({
+        name: templateName.value,
+        layout: JSON.parse(JSON.stringify(layout))
+    })
+})
+
+// Watch for changes
+watch([templateName, layout], () => {
+    const currentState = JSON.stringify({
+        name: templateName.value,
+        layout: JSON.parse(JSON.stringify(layout))
+    })
+    hasUnsavedChanges.value = currentState !== initialState.value
+}, { deep: true })
+
+// Warn before leaving
+onBeforeRouteLeave((to, from, next) => {
+    if (hasUnsavedChanges.value) {
+        showUnsavedModal.value = true
+        pendingNavigation.value = next
+    } else {
+        next()
+    }
+})
+
+function confirmLeave() {
+    showUnsavedModal.value = false
+    if (pendingNavigation.value) {
+        pendingNavigation.value()
+        pendingNavigation.value = null
+    }
+}
+
+function cancelLeave() {
+    showUnsavedModal.value = false
+    if (pendingNavigation.value) {
+        pendingNavigation.value(false)
+        pendingNavigation.value = null
+    }
+}
+
+// Warn before closing/refreshing browser
+onMounted(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        if (hasUnsavedChanges.value) {
+            e.preventDefault()
+            e.returnValue = ''
+        }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    onUnmounted(() => {
+        window.removeEventListener('beforeunload', handleBeforeUnload)
+    })
+})
 
 function zoomIn() {
     zoom.value = Math.min(zoom.value + 0.1, 2);
@@ -1378,6 +1502,13 @@ async function saveTemplate() {
             });
         }
 
+        // Clear unsaved changes flag after successful save
+        hasUnsavedChanges.value = false
+        initialState.value = JSON.stringify({
+            name: templateName.value,
+            layout: JSON.parse(JSON.stringify(layout))
+        })
+
         router.push("/templates");
     } catch (e) {
         alert("Failed to save template: " + (e as Error).message);
@@ -1402,6 +1533,32 @@ async function saveTemplate() {
 
 .slide-leave-to {
     transform: translateX(100%);
+    opacity: 0;
+}
+
+.modal-enter-active {
+    transition: opacity 0.2s ease-out;
+}
+.modal-leave-active {
+    transition: opacity 0.15s ease-in;
+}
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+.modal-enter-active > div {
+    transition: transform 0.25s var(--ease-spring), opacity 0.2s ease-out;
+}
+.modal-leave-active > div {
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+.modal-enter-from > div {
+    transform: scale(0.95) translateY(8px);
+    opacity: 0;
+}
+.modal-leave-to > div {
+    transform: scale(0.95) translateY(8px);
     opacity: 0;
 }
 </style>
