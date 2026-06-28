@@ -161,6 +161,7 @@
                             :style="elementStyle(el)"
                             @mousedown="startDrag(idx, $event)"
                             @click="selectedElement = idx"
+                            @contextmenu.prevent="showContextMenu(idx, $event)"
                         >
                             <div
                                 v-if="el.type === 'text'"
@@ -171,7 +172,7 @@
                             <img
                                 v-else-if="el.type === 'image'"
                                 :src="el.src"
-                                class="w-full h-full object-contain"
+                                style="width: 100%; height: 100%; object-fit: contain;"
                             />
                             <template v-if="selectedElement === idx">
                                 <div
@@ -233,6 +234,42 @@
                             </template>
                         </div>
                     </div>
+                </div>
+
+                <!-- Context Menu -->
+                <div
+                    v-if="contextMenu.visible"
+                    class="fixed z-50 card"
+                    :style="{
+                        left: contextMenu.x + 'px',
+                        top: contextMenu.y + 'px',
+                        padding: 'var(--space-2)',
+                        minWidth: '160px',
+                        boxShadow: 'var(--shadow-lg)'
+                    }"
+                >
+                    <button
+                        @click="duplicateElement"
+                        class="w-full text-left btn-ghost"
+                        style="padding: var(--space-3); display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); border-radius: var(--radius-md);"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                        Duplicate
+                    </button>
+                    <button
+                        @click="deleteElementFromContext"
+                        class="w-full text-left btn-ghost"
+                        style="padding: var(--space-3); display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); border-radius: var(--radius-md); color: var(--color-danger);"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Delete
+                    </button>
                 </div>
 
                 <button
@@ -853,7 +890,7 @@
                             <img
                                 v-else-if="el.type === 'image'"
                                 :src="el.src"
-                                class="w-full h-full object-contain"
+                                style="width: 100%; height: 100%; object-fit: contain;"
                             />
                             <template v-if="selectedElement === idx">
                                 <div
@@ -936,6 +973,12 @@ const selectedElement = ref<number | null>(null);
 const fullscreen = ref(false);
 const settingsVisible = ref(true);
 const zoom = ref(0.8);
+const contextMenu = ref({
+    visible: false,
+    x: 0,
+    y: 0,
+    elementIndex: null as number | null
+});
 
 interface LayoutElement {
     type: "text" | "image";
@@ -1082,6 +1125,7 @@ function elementStyle(el: LayoutElement) {
         top: el.y + "px",
         width: el.width + "px",
         height: el.height + "px",
+        overflow: "hidden",
     };
 }
 
@@ -1137,6 +1181,52 @@ function deleteElement() {
     layout.elements.splice(selectedElement.value, 1);
     selectedElement.value = null;
 }
+
+function showContextMenu(idx: number, event: MouseEvent) {
+    selectedElement.value = idx
+    contextMenu.value = {
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        elementIndex: idx
+    }
+}
+
+function duplicateElement() {
+    if (contextMenu.value.elementIndex === null) return
+    
+    const original = layout.elements[contextMenu.value.elementIndex]
+    const duplicate = JSON.parse(JSON.stringify(original))
+    
+    // Offset the duplicate slightly
+    duplicate.x += 20
+    duplicate.y += 20
+    
+    layout.elements.push(duplicate)
+    selectedElement.value = layout.elements.length - 1
+    contextMenu.value.visible = false
+}
+
+function deleteElementFromContext() {
+    if (contextMenu.value.elementIndex === null) return
+    
+    layout.elements.splice(contextMenu.value.elementIndex, 1)
+    selectedElement.value = null
+    contextMenu.value.visible = false
+}
+
+// Close context menu when clicking outside
+function hideContextMenu() {
+    contextMenu.value.visible = false
+}
+
+onMounted(() => {
+    document.addEventListener('click', hideContextMenu)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', hideContextMenu)
+})
 
 type ResizeDir = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 

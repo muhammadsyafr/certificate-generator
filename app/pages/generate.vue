@@ -40,6 +40,12 @@
               >
                 JSON Input
               </button>
+              <button
+                @click="uploadMode = 'single'"
+                :class="['tab', uploadMode === 'single' && 'tab-active']"
+              >
+                Single Certificate
+              </button>
             </div>
 
             <div v-if="uploadMode === 'csv'">
@@ -58,7 +64,7 @@
               </a>
             </div>
 
-            <div v-else>
+            <div v-else-if="uploadMode === 'json'">
               <div class="form-group">
                 <label class="form-label">Paste JSON Array</label>
                 <textarea
@@ -71,6 +77,34 @@
               <button @click="parseJson" class="btn-primary" style="margin-top: var(--space-4);">
                 Parse JSON
               </button>
+            </div>
+
+            <div v-else-if="uploadMode === 'single'">
+              <div v-if="!selectedTemplateId" class="card" style="padding: var(--space-8); text-align: center; background: var(--color-surface-hover);">
+                <p class="text-body" style="color: var(--color-text-secondary);">Please select a template first</p>
+              </div>
+              <div v-else-if="templatePlaceholders.length === 0" class="card" style="padding: var(--space-8); text-align: center; background: var(--color-surface-hover);">
+                <p class="text-body" style="color: var(--color-text-secondary);">This template has no placeholders</p>
+              </div>
+              <div v-else style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <div v-for="field in templatePlaceholders" :key="field" class="form-group">
+                  <label class="form-label" style="text-transform: capitalize;">{{ field.replace(/_/g, ' ') }}</label>
+                  <input
+                    v-if="field === 'date'"
+                    v-model="singleData[field]"
+                    type="date"
+                  />
+                  <input
+                    v-else
+                    v-model="singleData[field]"
+                    type="text"
+                    :placeholder="`Enter ${field.replace(/_/g, ' ')}`"
+                  />
+                </div>
+                <button @click="useSingleData" class="btn-primary" style="margin-top: var(--space-2);">
+                  Use This Data
+                </button>
+              </div>
             </div>
           </div>
 
@@ -189,9 +223,10 @@ watch(fonts, (newFonts) => {
 }, { immediate: true })
 
 const selectedTemplateId = ref<number | null>(null)
-const uploadMode = ref<'csv' | 'json'>('csv')
+const uploadMode = ref<'csv' | 'json' | 'single'>('csv')
 const jsonInput = ref('')
 const data = ref<Record<string, any>[]>([])
+const singleData = ref<Record<string, any>>({})
 const outputFormat = ref<'pdf' | 'png'>('pdf')
 const generating = ref(false)
 const progress = ref(0)
@@ -199,6 +234,50 @@ const progress = ref(0)
 if (route.query.template) {
   selectedTemplateId.value = parseInt(route.query.template as string)
 }
+
+// Extract placeholders from selected template
+const templatePlaceholders = computed(() => {
+  if (!selectedTemplateId.value || !templates.value) return []
+  
+  const template = templates.value.find(t => t.id === selectedTemplateId.value)
+  if (!template) return []
+  
+  try {
+    const layout = JSON.parse(template.layout)
+    const placeholders = new Set<string>()
+    
+    // Extract {{placeholder}} from all text elements
+    layout.elements.forEach((el: any) => {
+      if (el.type === 'text' && el.content) {
+        const matches = el.content.match(/\{\{([^}]+)\}\}/g)
+        if (matches) {
+          matches.forEach((match: string) => {
+            const key = match.replace(/\{\{|\}\}/g, '').trim()
+            placeholders.add(key)
+          })
+        }
+      }
+    })
+    
+    return Array.from(placeholders).sort()
+  } catch (e) {
+    return []
+  }
+})
+
+// Initialize singleData when template changes
+watch([selectedTemplateId, templatePlaceholders], () => {
+  const newData: Record<string, any> = {}
+  templatePlaceholders.value.forEach(key => {
+    // Set default values
+    if (key === 'date') {
+      newData[key] = new Date().toISOString().split('T')[0]
+    } else {
+      newData[key] = ''
+    }
+  })
+  singleData.value = newData
+}, { immediate: true })
 
 const dataKeys = computed(() => {
   if (data.value.length === 0) return []
@@ -233,6 +312,16 @@ function parseJson() {
   } catch (e) {
     alert('Invalid JSON: ' + (e as Error).message)
   }
+}
+
+function useSingleData() {
+  // Validate that at least one field is filled
+  const hasData = Object.values(singleData.value).some(val => val !== '')
+  if (!hasData) {
+    alert('Please fill in at least one field')
+    return
+  }
+  data.value = [{ ...singleData.value }]
 }
 
 function clearData() {
@@ -305,6 +394,7 @@ async function renderCertificate(layout: any, data: Record<string, any>, format:
     div.style.top = el.y + 'px'
     div.style.width = el.width + 'px'
     div.style.height = el.height + 'px'
+    div.style.overflow = 'hidden'
 
     if (el.type === 'text') {
       let content = el.content || ''
