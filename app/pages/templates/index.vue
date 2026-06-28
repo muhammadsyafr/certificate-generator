@@ -12,13 +12,6 @@
           <h1 class="text-heading-lg" style="margin-bottom: var(--space-3);">Certificate Templates</h1>
           <p class="text-body" style="color: var(--color-text-secondary);">Design and manage your certificate layouts</p>
         </div>
-        <NuxtLink to="/templates/new" class="btn-primary" style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          New Template
-        </NuxtLink>
       </header>
 
       <div v-if="pending" class="card-empty">
@@ -35,6 +28,7 @@
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-6);">
+        <!-- Existing Templates -->
         <div
           v-for="template in templates"
           :key="template.id"
@@ -72,6 +66,17 @@
               Use
             </NuxtLink>
           </div>
+        </div>
+
+        <!-- Create New Template Card -->
+        <div class="card placeholder-card" style="padding: var(--space-6); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; cursor: pointer; transition: all var(--duration-normal) var(--ease-out-expo);" @click="goToCreateTemplate" @keyup.enter="goToCreateTemplate" tabindex="0">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-obsidian); margin-bottom: var(--space-4);">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <h3 class="text-heading-sm" style="font-weight: var(--weight-semibold); color: var(--color-obsidian); margin-bottom: var(--space-2);">Create New</h3>
+          <p class="text-caption" style="color: var(--color-text-secondary); text-align: center;">Start designing a new template</p>
+          <button @click="goToCreateTemplate" class="btn-primary" style="margin-top: var(--space-5); padding: 10px 20px; font-size: var(--text-sm);">New Template</button>
         </div>
       </div>
     </div>
@@ -142,12 +147,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { navigateTo } from '#app'
 
 const { data: templates, pending, error, refresh } = await useFetch('/api/templates')
 
 const showDeleteModal = ref(false)
 const deleting = ref(false)
 const deletingTemplate = ref<{ id: number; name: string } | null>(null)
+
+function goToCreateTemplate() {
+  navigateTo('/templates/new')
+}
 
 function deleteTemplate(id: number) {
   const tmpl = templates.value?.find((t: any) => t.id === id)
@@ -179,6 +189,23 @@ async function confirmDelete() {
 </script>
 
 <style scoped>
+.placeholder-card {
+  border: 2px dashed var(--color-border);
+  background: linear-gradient(135deg, rgba(244, 244, 245, 0.5) 0%, rgba(236, 236, 238, 0.5) 100%);
+  transition: all var(--duration-normal) var(--ease-out-expo);
+}
+
+.placeholder-card:hover {
+  border-color: var(--color-obsidian);
+  background: linear-gradient(135deg, var(--color-mist) 0%, var(--color-fog) 100%);
+  transform: translateY(-4px);
+}
+
+.placeholder-card:focus {
+  outline: none;
+  border-color: var(--color-obsidian);
+}
+
 .modal-enter-active {
   transition: opacity 0.2s ease-out;
 }
