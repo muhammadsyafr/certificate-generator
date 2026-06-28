@@ -2,6 +2,7 @@ import { db } from '../../database/client'
 import { fonts } from '../../database/schema'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
+import { dataDir } from '../../utils/paths'
 
 export default defineEventHandler(async (event) => {
   const method = event.method
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const results = []
-    const dirPath = join(process.cwd(), 'public', 'uploads', 'fonts')
+    const dirPath = dataDir('public', 'uploads', 'fonts')
     await import('fs/promises').then(m => m.mkdir(dirPath, { recursive: true }))
 
     for (const file of files) {

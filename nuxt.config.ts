@@ -17,9 +17,19 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'viewport', content: 'width=device-width,initial-scale=1' },
-        { name: 'description', content: 'Design templates, upload data, generate certificates in bulk. Zero-config, fully local.' },
+        { name: 'description', content: 'Design certificate templates with a drag-and-drop canvas editor, upload CSV or JSON data, and generate hundreds of production-ready PDFs or PNGs in seconds. Zero-config, fully local — no sign-up, no API keys.' },
+        { name: 'keywords', content: 'certificate generator, bulk certificate, pdf generator, certificate template, award certificate, diploma generator, certificate maker' },
+        { name: 'theme-color', content: '#fafafa' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'Certificate Generator — Design once. Generate hundreds.' },
+        { property: 'og:description', content: 'Drag-and-drop templates. CSV data. Production-ready PDFs in seconds. Fully local, no sign-up needed.' },
+        { property: 'og:image', content: '/perunggu.png' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Certificate Generator' },
+        { name: 'twitter:description', content: 'Design templates, upload data, generate certificates in bulk. Zero-config, fully local.' },
       ],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/perunggu.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {

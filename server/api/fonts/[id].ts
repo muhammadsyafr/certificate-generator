@@ -3,6 +3,7 @@ import { fonts } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
+import { dataDir } from '../../utils/paths'
 
 export default defineEventHandler(async (event) => {
   const id = parseInt(event.context.params?.id || '')
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
     // Delete file from filesystem
     try {
-      const fullPath = join(process.cwd(), 'public', font.filepath)
+      const fullPath = dataDir('public', font.filepath)
       await unlink(fullPath)
     } catch (e) {
       console.error('Failed to delete font file:', e)

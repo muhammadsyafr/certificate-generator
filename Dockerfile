@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM node:20-alpine AS build
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS run
+
+WORKDIR /app
+COPY --from=build /app/.output ./.output
+COPY --from=build /app/package.json ./
+
+RUN mkdir -p /data/public/uploads && ln -sfn /data/public/uploads /app/public/uploads
+
+EXPOSE 3000
+
+ENV DATA_DIR=/data
+
+CMD ["node", ".output/server/index.mjs"]

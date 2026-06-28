@@ -3,21 +3,8 @@
         <!-- Hero -->
         <section class="hero-section">
             <div class="hero-content">
-                <div class="brand-mark anim-float">
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                        <path d="M2 17l10 5 10-5" />
-                        <path d="M2 12l10 5 10-5" />
-                    </svg>
+                <div class="brand-mark">
+                    <img src="/perunggu.png" alt="Certificate Generator" width="72" height="72" style="border-radius: var(--radius-xl);" />
                 </div>
                 <p class="brand-subtitle anim-fade-up">Certificate Generator</p>
 
@@ -326,7 +313,16 @@ const statsRef = ref<HTMLElement | null>(null);
 const workflowRef = ref<HTMLElement | null>(null);
 const ctaRef = ref<HTMLElement | null>(null);
 
-const revealed = ref<Record<string, boolean | boolean[]>>({
+interface RevealedState {
+  stats: boolean
+  heading: boolean
+  capabilities: boolean[]
+  howHeading: boolean
+  steps: boolean[]
+  cta: boolean
+}
+
+const revealed = ref<RevealedState>({
     stats: false,
     heading: false,
     capabilities: [false, false, false, false],
@@ -364,10 +360,10 @@ onMounted(() => {
                     revealed.value.howHeading = true;
                 } else if (el.dataset.reveal === "cap") {
                     const idx = parseInt(el.dataset.capIndex || "0", 10);
-                    (revealed.value.capabilities as boolean[])[idx] = true;
+                    revealed.value.capabilities[idx] = true
                 } else if (el.dataset.reveal === "step") {
                     const idx = parseInt(el.dataset.stepIndex || "0", 10);
-                    (revealed.value.steps as boolean[])[idx] = true;
+                    revealed.value.steps[idx] = true
                 }
             }
         },
@@ -413,15 +409,9 @@ onUnmounted(() => {
 }
 
 .brand-mark {
-    width: 64px;
-    height: 64px;
     margin: 0 auto var(--space-3);
-    background: var(--color-primary);
-    color: var(--color-surface);
-    border-radius: var(--radius-xl);
-    display: grid;
-    place-items: center;
-    box-shadow: var(--shadow-md);
+    width: 72px;
+    height: 72px;
 }
 
 .brand-subtitle {

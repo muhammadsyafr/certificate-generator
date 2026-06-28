@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
 import sharp from 'sharp'
+import { dataDir } from '../../utils/paths'
 
 export default defineEventHandler(async (event) => {
   const method = event.method
@@ -52,7 +53,7 @@ export default defineEventHandler(async (event) => {
     const timestamp = Date.now()
     const filename = `${timestamp}-${file.filename}`
     const subdir = type
-    const dirPath = join(process.cwd(), 'public', 'uploads', subdir)
+    const dirPath = dataDir('public', 'uploads', subdir)
     await import('fs/promises').then(m => m.mkdir(dirPath, { recursive: true }))
     const filepath = `/uploads/${subdir}/${filename}`
     const fullPath = join(dirPath, filename)

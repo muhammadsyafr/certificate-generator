@@ -52,9 +52,15 @@
               <div class="form-group">
                 <label class="form-label">Upload CSV File</label>
                 <input type="file" accept=".csv" @change="onCsvUpload" />
-                <span class="text-caption" style="color: var(--color-text-muted); display: block; margin-top: var(--space-2);">CSV should have columns: name, date, certificate_id</span>
+                <span class="text-caption" style="color: var(--color-text-muted); display: block; margin-top: var(--space-2);">CSV columns: {{ csvColumnsHint || 'select a template to see expected columns' }}</span>
               </div>
-              <a href="/example.csv" download class="inline-flex items-center" style="margin-top: var(--space-3); color: var(--color-primary); font-weight: var(--weight-medium); font-size: var(--text-sm); gap: var(--space-2); transition: color var(--duration-fast) var(--ease-standard);">
+              <a
+                v-if="csvDownloadUrl"
+                :href="csvDownloadUrl"
+                download="example.csv"
+                class="inline-flex items-center"
+                style="margin-top: var(--space-3); color: var(--color-primary); font-weight: var(--weight-medium); font-size: var(--text-sm); gap: var(--space-2); transition: color var(--duration-fast) var(--ease-standard);"
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                   <polyline points="7 10 12 15 17 10"/>
@@ -252,6 +258,11 @@ const qualityOptions = [
   { value: 'high' as const, label: 'High', desc: 'balanced' },
   { value: 'maximum' as const, label: 'Maximum', desc: 'best quality' },
 ]
+const dataKeys = computed(() => {
+  if (data.value.length === 0) return []
+  return Object.keys(data.value[0])
+})
+
 const generating = ref(false)
 const progress = ref(0)
 
@@ -319,6 +330,38 @@ const jsonPlaceholder = computed(() => {
   }
   return JSON.stringify([sample])
 })
+
+const csvColumnsHint = computed(() =>
+  templatePlaceholders.value.length > 0 ? templatePlaceholders.value.join(', ') : ''
+)
+
+const csvDownloadUrl = ref('')
+
+watch(templatePlaceholders, () => {
+  // Revoke previous blob URL
+  if (csvDownloadUrl.value) URL.revokeObjectURL(csvDownloadUrl.value)
+
+  if (templatePlaceholders.value.length === 0) {
+    csvDownloadUrl.value = ''
+    return
+  }
+
+  const header = templatePlaceholders.value.join(',')
+  const sample: string[] = []
+  for (const key of templatePlaceholders.value) {
+    if (key.includes('date') || key.includes('Date')) {
+      sample.push('2026-06-27')
+    } else if (key.includes('name') || key.includes('Name')) {
+      sample.push('John Doe')
+    } else {
+      sample.push(`your ${key.replace(/_/g, ' ')}`)
+    }
+  }
+  const row = sample.join(',')
+
+  const blob = new Blob([`${header}\n${row}\n`], { type: 'text/csv' })
+  csvDownloadUrl.value = URL.createObjectURL(blob)
+}, { immediate: true })
 
 function onCsvUpload(event: Event) {
   const input = event.target as HTMLInputElement

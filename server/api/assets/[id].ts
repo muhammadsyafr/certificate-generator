@@ -3,6 +3,7 @@ import { assets } from '../../database/schema'
 import { eq } from 'drizzle-orm'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
+import { dataDir } from '../../utils/paths'
 
 export default defineEventHandler(async (event) => {
   const method = event.method
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Delete file from filesystem
-    const fullPath = join(process.cwd(), 'public', asset.filepath)
+    const fullPath = dataDir('public', asset.filepath)
     try {
       await unlink(fullPath)
     } catch (error) {
