@@ -75,20 +75,133 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showDeleteModal"
+          class="fixed inset-0 z-[9999] flex items-center justify-center"
+          style="background: hsla(0, 0%, 5%, 0.45); backdrop-filter: blur(4px);"
+          @click.self="cancelDelete"
+        >
+          <div
+            class="surface-raised"
+            style="
+              max-width: 420px;
+              width: calc(100% - 2rem);
+              padding: var(--space-8);
+              box-shadow: var(--shadow-lg);
+            "
+          >
+            <div style="margin-bottom: var(--space-5);">
+              <h2
+                class="text-heading-sm"
+                style="margin-bottom: var(--space-3); color: var(--color-text);"
+              >
+                Delete Template
+              </h2>
+              <p
+                style="
+                  color: var(--color-text-secondary);
+                  font-size: var(--text-sm);
+                  line-height: var(--leading-relaxed);
+                "
+              >
+                Are you sure you want to delete
+                <strong style="color: var(--color-text);">"{{ deletingTemplate?.name }}"</strong>?
+                This action cannot be undone.
+              </p>
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: flex-end;
+                gap: var(--space-3);
+              "
+            >
+              <button
+                @click="cancelDelete"
+                class="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                @click="confirmDelete"
+                class="btn-danger"
+                :disabled="deleting"
+              >
+                {{ deleting ? "Deleting..." : "Delete Template" }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const { data: templates, pending, error, refresh } = await useFetch('/api/templates')
 
-async function deleteTemplate(id: number) {
-  if (!confirm('Delete this template?')) return
+const showDeleteModal = ref(false)
+const deleting = ref(false)
+const deletingTemplate = ref<{ id: number; name: string } | null>(null)
+
+function deleteTemplate(id: number) {
+  const tmpl = templates.value?.find((t: any) => t.id === id)
+  if (!tmpl) return
+  deletingTemplate.value = { id: tmpl.id, name: tmpl.name }
+  showDeleteModal.value = true
+}
+
+function cancelDelete() {
+  showDeleteModal.value = false
+  deletingTemplate.value = null
+}
+
+async function confirmDelete() {
+  if (!deletingTemplate.value) return
+  deleting.value = true
 
   try {
-    await $fetch(`/api/templates/${id}`, { method: 'DELETE' })
+    await $fetch(`/api/templates/${deletingTemplate.value.id}`, { method: 'DELETE' })
+    showDeleteModal.value = false
+    deletingTemplate.value = null
     refresh()
   } catch (e) {
     alert('Failed to delete template')
+  } finally {
+    deleting.value = false
   }
 }
 </script>
+
+<style scoped>
+.modal-enter-active {
+  transition: opacity 0.2s ease-out;
+}
+.modal-leave-active {
+  transition: opacity 0.15s ease-in;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active > div {
+  transition: transform 0.25s var(--ease-spring), opacity 0.2s ease-out;
+}
+.modal-leave-active > div {
+  transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+.modal-enter-from > div {
+  transform: scale(0.95) translateY(8px);
+  opacity: 0;
+}
+.modal-leave-to > div {
+  transform: scale(0.95) translateY(8px);
+  opacity: 0;
+}
+</style>

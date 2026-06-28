@@ -71,8 +71,9 @@
                   v-model="jsonInput"
                   rows="8"
                   style="font-family: var(--font-mono); font-size: var(--text-sm);"
-                  placeholder='[{"name": "John Doe", "date": "2026-06-27", "certificate_id": "CERT-001"}]'
+                  :placeholder="jsonPlaceholder"
                 ></textarea>
+                <span class="text-caption" style="color: var(--color-text-muted); display: block; margin-top: var(--space-2);">Each object should have keys matching template placeholders: {{ templatePlaceholders.join(', ') || 'none' }}</span>
               </div>
               <button @click="parseJson" class="btn-primary" style="margin-top: var(--space-4);">
                 Parse JSON
@@ -158,6 +159,23 @@
               </select>
             </div>
 
+            <div class="form-group">
+              <label class="form-label">Quality</label>
+              <div style="display: flex; gap: var(--space-2);">
+                <button
+                  v-for="opt in qualityOptions"
+                  :key="opt.value"
+                  @click="quality = opt.value"
+                  class="btn-ghost quality-btn"
+                  :class="{ 'quality-btn--active': quality === opt.value }"
+                  style="flex: 1; padding: var(--space-3) var(--space-2); font-size: var(--text-xs); border-radius: var(--radius-lg);"
+                >
+                  <div style="font-weight: var(--weight-semibold);">{{ opt.label }}</div>
+                  <div class="text-caption" style="color: var(--color-text-muted); margin-top: var(--space-1);">{{ opt.desc }}</div>
+                </button>
+              </div>
+            </div>
+
             <button
               @click="generateBulk"
               :disabled="!selectedTemplateId || data.length === 0 || generating"
@@ -228,6 +246,12 @@ const jsonInput = ref('')
 const data = ref<Record<string, any>[]>([])
 const singleData = ref<Record<string, any>>({})
 const outputFormat = ref<'pdf' | 'png'>('pdf')
+const quality = ref<'standard' | 'high' | 'maximum'>('high')
+const qualityOptions = [
+  { value: 'standard' as const, label: 'Standard', desc: 'smaller file' },
+  { value: 'high' as const, label: 'High', desc: 'balanced' },
+  { value: 'maximum' as const, label: 'Maximum', desc: 'best quality' },
+]
 const generating = ref(false)
 const progress = ref(0)
 
@@ -279,9 +303,21 @@ watch([selectedTemplateId, templatePlaceholders], () => {
   singleData.value = newData
 }, { immediate: true })
 
-const dataKeys = computed(() => {
-  if (data.value.length === 0) return []
-  return Object.keys(data.value[0])
+const jsonPlaceholder = computed(() => {
+  if (templatePlaceholders.value.length === 0) {
+    return '[{"name": "John Doe", "date": "2026-06-27", "certificate_id": "CERT-001"}]'
+  }
+  const sample: Record<string, string> = {}
+  for (const key of templatePlaceholders.value) {
+    if (key.includes('date') || key.includes('Date')) {
+      sample[key] = '2026-06-27'
+    } else if (key.includes('name') || key.includes('Name')) {
+      sample[key] = 'John Doe'
+    } else {
+      sample[key] = `your ${key.replace(/_/g, ' ')}`
+    }
+  }
+  return JSON.stringify([sample])
 })
 
 function onCsvUpload(event: Event) {
@@ -370,6 +406,13 @@ async function generateBulk() {
 }
 
 async function renderCertificate(layout: any, data: Record<string, any>, format: 'pdf' | 'png'): Promise<Blob> {
+  const qualityPresets = {
+    standard: { scale: 1, jpeg: 0.75 },
+    high: { scale: 1.5, jpeg: 0.85 },
+    maximum: { scale: 2, jpeg: 0.95 },
+  }
+  const preset = qualityPresets[quality.value]
+
   const container = document.createElement('div')
   container.style.position = 'absolute'
   container.style.left = '-9999px'
@@ -425,14 +468,14 @@ async function renderCertificate(layout: any, data: Record<string, any>, format:
 
   const canvas = await html2canvas(container, {
     backgroundColor: '#ffffff',
-    scale: 2,
+    scale: preset.scale,
   })
 
   document.body.removeChild(container)
 
   if (format === 'png') {
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), 'image/png')
+      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', preset.jpeg)
     })
   } else {
     const pdf = new jsPDF({
@@ -441,10 +484,27 @@ async function renderCertificate(layout: any, data: Record<string, any>, format:
       format: [layout.width, layout.height],
     })
 
-    const imgData = canvas.toDataURL('image/png')
-    pdf.addImage(imgData, 'PNG', 0, 0, layout.width, layout.height)
+    const imgData = canvas.toDataURL('image/jpeg', preset.jpeg)
+    pdf.addImage(imgData, 'JPEG', 0, 0, layout.width, layout.height)
 
     return pdf.output('blob')
   }
 }
 </script>
+
+<style scoped>
+.quality-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.quality-btn:hover {
+  border-color: var(--color-text-muted);
+}
+
+.quality-btn--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-muted);
+}
+</style>
