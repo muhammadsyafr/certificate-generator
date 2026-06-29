@@ -49,12 +49,15 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: "icon", type: "image/png", href: "/badge.png" },
+        { rel: "preconnect", href: "https://api.fontshare.com" },
+        { rel: "stylesheet", href: "https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
           href: "https://fonts.gstatic.com",
           crossorigin: "",
         },
+        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Allura&display=swap" },
         {
            rel: "stylesheet",
            href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..146,100..900;1,9..146,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap",

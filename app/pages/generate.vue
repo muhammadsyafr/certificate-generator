@@ -281,16 +281,19 @@ const templatePlaceholders = computed(() => {
     const layout = JSON.parse(template.layout)
     const placeholders = new Set<string>()
     
-    // Extract {{placeholder}} from all text elements
     layout.elements.forEach((el: any) => {
-      if (el.type === 'text' && el.content) {
-        const matches = el.content.match(/\{\{([^}]+)\}\}/g)
-        if (matches) {
-          matches.forEach((match: string) => {
-            const key = match.replace(/\{\{|\}\}/g, '').trim()
-            placeholders.add(key)
-          })
-        }
+      // extract from content/text
+      const content = el.content || el.text || ''
+      const matches = content.match(/\{(\w+)\}/g)
+      if (matches) {
+        matches.forEach((match: string) => {
+          placeholders.add(match.replace(/[{}]/g, '').trim())
+        })
+      }
+      // extract from field property
+      if (el.field) {
+        const fm = el.field.match(/\{?(\w+)\}?/)
+        if (fm) placeholders.add(fm[1])
       }
     })
     
@@ -485,7 +488,7 @@ async function renderCertificate(layout: any, data: Record<string, any>, format:
     if (el.type === 'text') {
       let content = el.content || ''
       for (const [key, value] of Object.entries(data)) {
-        content = content.replace(new RegExp(`{{${key}}}`, 'g'), String(value))
+        content = content.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value))
       }
       div.textContent = content
       div.style.fontFamily = el.fontFamily || 'Source Serif 4, serif'

@@ -1,1601 +1,1504 @@
 <template>
-    <div
-        class="fixed inset-0 flex flex-col"
-        style="background: var(--color-bg)"
-    >
-        <header
-            class="flex justify-between items-center border-b flex-shrink-0"
-            style="
-                padding: var(--space-5) var(--space-8);
-                border-color: var(--color-border);
-            "
+  <div id="ed-root" @click.self="contextMenu.visible = false">
+    <!-- TOP BAR -->
+    <header class="ed-header">
+      <a href="/" class="ed-brand">
+        <span class="brand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="9.5" r="5.5" stroke="#F5521E" stroke-width="2"/>
+            <path d="M9 14l-2 7 5-3 5 3-2-7" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+      <div class="ed-divider-v"></div>
+      <div class="ed-title-area">
+        <input
+          v-model="templateName"
+          class="ed-title-input"
+          placeholder="Untitled Template"
+          @focus="editingTitle = true"
+          @blur="editingTitle = false"
+        />
+        <div class="ed-save-status">
+          <span class="save-dot" :style="{ background: editingTitle ? '#f59e0b' : '#1Fae6b' }"></span>
+          {{ editingTitle ? 'Editing...' : 'All changes saved' }}
+        </div>
+      </div>
+      <div class="ed-undo-group">
+        <button class="ed-icon-btn" @mouseenter="softIn" @mouseleave="softOut" title="Undo">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="ed-icon-btn" @mouseenter="softIn" @mouseleave="softOut" title="Redo">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <path d="M15 7l5 5-5 5M20 12H9a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ed-header-right">
+        <div class="ed-plan-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2v6m0 0l-2.5-2.5M12 8l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Free plan
+          <a href="/#pricing" class="plan-upgrade">Upgrade</a>
+        </div>
+        <button class="ed-btn-outline" @mouseenter="softIn" @mouseleave="whiteOut" @click="previewing = !previewing">
+          {{ previewing ? 'Edit' : 'Preview' }}
+        </button>
+        <button
+          :disabled="saving"
+          class="ed-btn-outline"
+          @mouseenter="softIn"
+          @mouseleave="whiteOut"
+          @click="saveTemplate"
+          style="margin-right:-4px"
         >
-            <div>
-                <NuxtLink
-                    to="/templates"
-                    class="inline-flex items-center"
-                    style="
-                        gap: var(--space-2);
-                        margin-bottom: var(--space-2);
-                        color: var(--color-text-secondary);
-                        font-size: var(--text-sm);
-                        font-weight: var(--weight-medium);
-                        transition: color var(--duration-fast)
-                            var(--ease-standard);
-                    "
-                >
-                    <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                    <span>Back to Templates</span>
-                </NuxtLink>
-                <h1 class="text-heading-sm" style="color: var(--color-text)">
-                    {{ isNew ? "New Template" : "Edit Template" }}
-                </h1>
-            </div>
-            <button
-                @click="saveTemplate"
-                :disabled="saving || !templateName"
-                class="btn-primary"
-            >
-                {{ saving ? "Saving..." : "Save Template" }}
-            </button>
-        </header>
+          {{ saving ? 'Saving...' : 'Save' }}
+        </button>
+        <button
+          :disabled="saving"
+          class="ed-btn-accent"
+          @mouseenter="ctaIn"
+          @mouseleave="ctaOut"
+          @click="generatePdfs"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/>
+          </svg>
+          Generate {{ records.length }} PDFs
+        </button>
+        <div class="ed-avatar">A</div>
+      </div>
+    </header>
 
-        <div class="relative flex flex-1 overflow-hidden">
-            <div
-                class="flex flex-col flex-1 min-w-0"
-                :style="{ width: settingsVisible ? '80%' : '100%' }"
-            >
-                <div
-                    class="flex justify-between items-center border-b flex-shrink-0"
-                    style="
-                        padding: var(--space-4) var(--space-6);
-                        border-color: var(--color-border);
-                    "
-                >
-                    <h4
-                        class="text-body-sm"
-                        style="
-                            font-weight: var(--weight-semibold);
-                            color: var(--color-text-secondary);
-                        "
-                    >
-                        Canvas Preview
-                    </h4>
-                    <div
-                        class="flex"
-                        style="gap: var(--space-2); flex-wrap: wrap"
-                    >
-                        <button
-                            @click="zoomOut"
-                            class="btn-ghost btn-sm"
-                            title="Zoom Out"
-                            style="
-                                width: 36px;
-                                height: 36px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 18px;
-                                font-weight: var(--weight-medium);
-                            "
-                        >
-                            −
-                        </button>
-                        <span
-                            class="text-body-sm"
-                            style="
-                                padding: var(--space-2) var(--space-3);
-                                color: var(--color-text-secondary);
-                                display: flex;
-                                align-items: center;
-                                font-weight: var(--weight-medium);
-                                min-width: 60px;
-                                justify-content: center;
-                            "
-                            >{{ Math.round(zoom * 100) }}%</span
-                        >
-                        <button
-                            @click="zoomIn"
-                            class="btn-ghost btn-sm"
-                            title="Zoom In"
-                            style="
-                                width: 36px;
-                                height: 36px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 18px;
-                                font-weight: var(--weight-medium);
-                            "
-                        >
-                            +
-                        </button>
-                        <div
-                            style="
-                                width: 1px;
-                                height: 32px;
-                                background: var(--color-border);
-                                margin: 0 var(--space-1);
-                            "
-                        ></div>
-                        <button
-                            @click="fullscreen = !fullscreen"
-                            class="btn-ghost btn-sm"
-                            style="padding: var(--space-2) var(--space-4)"
-                        >
-                            {{ fullscreen ? "Exit Fullscreen" : "Fullscreen" }}
-                        </button>
-                    </div>
-                </div>
-                <div
-                    ref="canvasContainerRef"
-                    class="flex-1 overflow-auto"
-                    style="
-                        background: var(--color-surface-hover);
-                        padding: var(--space-8);
-                    "
-                >
-                    <div :style="canvasStyle" class="relative" @click.self="selectedElement = null">
-                        <div v-if="layout.background" class="absolute inset-0 pointer-events-none">
-                            <img
-                                :src="layout.background"
-                                class="w-full h-full object-contain"
-                            />
-                        </div>
-                        <div
-                            v-if="selectedElement !== null"
-                            class="absolute inset-0 pointer-events-none z-10"
-                            style="
-                                background-image:
-                                    linear-gradient(rgba(201, 168, 76, 0.15) 1px, transparent 1px),
-                                    linear-gradient(90deg, rgba(201, 168, 76, 0.15) 1px, transparent 1px);
-                                background-size: 20px 20px;
-                            "
-                        ></div>
-
-                        <div
-                            v-for="(el, idx) in layout.elements"
-                            :key="idx"
-                            class="absolute cursor-move border border-dashed border-transparent hover:border-obsidian transition-colors group"
-                            :style="elementStyle(el)"
-                            @mousedown="startDrag(idx, $event)"
-                            @click="selectedElement = idx"
-                            @contextmenu.prevent="showContextMenu(idx, $event)"
-                        >
-                            <div
-                                v-if="el.type === 'text'"
-                                :style="textStyle(el)"
-                            >
-                                {{ el.content }}
-                            </div>
-                            <img
-                                v-else-if="el.type === 'image'"
-                                :src="el.src"
-                                style="width: 100%; height: 100%; object-fit: contain;"
-                            />
-                            <template v-if="selectedElement === idx">
-                                <div
-                                    class="absolute rounded-full cursor-nwse-resize"
-                                    style="top: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'nw', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nesw-resize"
-                                    style="top: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'ne', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nesw-resize"
-                                    style="bottom: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'sw', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nwse-resize"
-                                    style="bottom: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'se', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
-                                    style="left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'w', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
-                                    style="right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'e', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
-                                    style="top: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'n', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
-                                    style="bottom: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 's', $event)
-                                    "
-                                ></div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Context Menu -->
-                <div
-                    v-if="contextMenu.visible"
-                    class="fixed z-50 card"
-                    :style="{
-                        left: contextMenu.x + 'px',
-                        top: contextMenu.y + 'px',
-                        padding: 'var(--space-2)',
-                        minWidth: '160px',
-                        boxShadow: 'var(--shadow-lg)'
-                    }"
-                >
-                    <button
-                        @click="duplicateElement"
-                        class="w-full text-left btn-ghost"
-                        style="padding: var(--space-3); display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); border-radius: var(--radius-md);"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                        </svg>
-                        Duplicate
-                    </button>
-                    <button
-                        @click="deleteElementFromContext"
-                        class="w-full text-left btn-ghost"
-                        style="padding: var(--space-3); display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); border-radius: var(--radius-md); color: var(--color-danger);"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        Delete
-                    </button>
-                </div>
-
-                <button
-                    @click="settingsVisible = !settingsVisible"
-                    class="fixed z-10 rounded-full shadow-lg flex items-center justify-center transition-all"
-                    style="
-                        bottom: var(--space-8);
-                        right: var(--space-8);
-                        width: 56px;
-                        height: 56px;
-                        background: var(--color-primary);
-                        color: var(--color-surface);
-                        box-shadow: var(--shadow-lg);
-                    "
-                    :title="settingsVisible ? 'Hide Settings' : 'Show Settings'"
-                >
-                    <svg
-                        v-if="settingsVisible"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                    <svg
-                        v-else
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </button>
-            </div>
-
-            <Transition name="slide">
-                <div
-                    v-if="settingsVisible"
-                    class="flex flex-col border-l overflow-y-auto"
-                    style="
-                        width: 20%;
-                        min-width: 380px;
-                        border-color: var(--color-border);
-                        background: var(--color-surface);
-                    "
-                >
-                    <div style="padding: var(--space-8)">
-                        <h2
-                            class="text-heading-sm"
-                            style="margin-bottom: var(--space-8)"
-                        >
-                            Template Settings
-                        </h2>
-
-                        <div
-                            style="
-                                display: flex;
-                                flex-direction: column;
-                                gap: var(--space-6);
-                            "
-                        >
-                            <div class="form-group">
-                                <label class="form-label">Template Name</label>
-                                <input
-                                    v-model="templateName"
-                                    type="text"
-                                    placeholder="e.g. Completion Certificate"
-                                />
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Canvas Size</label>
-                                <div class="form-row">
-                                    <input
-                                        v-model.number="layout.width"
-                                        type="number"
-                                        placeholder="Width"
-                                        min="400"
-                                        max="2400"
-                                    />
-                                    <input
-                                        v-model.number="layout.height"
-                                        type="number"
-                                        placeholder="Height"
-                                        min="400"
-                                        max="2400"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label"
-                                    >Background Image</label
-                                >
-                                <select v-model="layout.background">
-                                    <option value="">None</option>
-                                    <option
-                                        v-for="bg in combinedBackgrounds"
-                                        :key="bg.id"
-                                        :value="bg.filepath"
-                                    >
-                                        {{ bg.filename }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label"
-                                    >Background Color</label
-                                >
-                                <div style="display: flex; align-items: center; gap: var(--space-3);">
-                                    <input
-                                        v-model="layout.backgroundColor"
-                                        type="color"
-                                        style="width: 40px; height: 40px; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer;"
-                                    />
-                                    <input
-                                        v-model="layout.backgroundColor"
-                                        type="text"
-                                        placeholder="#ffffff"
-                                        style="font-family: monospace; flex: 1;"
-                                    />
-                                </div>
-                            </div>
-
-                            <hr style="border-color: var(--color-border)" />
-
-                            <h3
-                                class="text-body"
-                                style="
-                                    font-weight: var(--weight-semibold);
-                                    color: var(--color-text);
-                                "
-                            >
-                                Add Elements
-                            </h3>
-
-                            <button
-                                @click="addTextElement"
-                                class="btn-primary"
-                                style="
-                                    width: 100%;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    gap: var(--space-2);
-                                "
-                            >
-                                <svg
-                                    width="18"
-                                    height="18"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Add Text Element
-                            </button>
-
-                            <div class="form-group">
-                                <label class="form-label">Add Image</label>
-                                <select @change="addImageElement($event)">
-                                    <option value="">Select image...</option>
-                                    <option
-                                        v-for="logo in combinedLogos"
-                                        :key="logo.id"
-                                        :value="logo.filepath"
-                                    >
-                                        {{ logo.filename }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <hr style="border-color: var(--color-border)" />
-
-                            <div
-                                v-if="selectedElement !== null"
-                                style="
-                                    display: flex;
-                                    flex-direction: column;
-                                    gap: var(--space-6);
-                                "
-                            >
-                                <div class="flex justify-between items-center">
-                                    <h3
-                                        class="text-body"
-                                        style="
-                                            font-weight: var(--weight-semibold);
-                                            color: var(--color-text);
-                                        "
-                                    >
-                                        Element Properties
-                                    </h3>
-                                    <button
-                                        @click="deleteElement"
-                                        class="btn-ghost"
-                                        style="
-                                            color: var(--color-danger);
-                                            padding: var(--space-2)
-                                                var(--space-3);
-                                            font-size: var(--text-sm);
-                                        "
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Content</label>
-                                    <textarea
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .content
-                                        "
-                                        rows="3"
-                                        style="
-                                            font-family: var(--font-mono);
-                                            font-size: var(--text-sm);
-                                        "
-                                        placeholder="Use {{name}}, {{date}}, {{certificate_id}}"
-                                    ></textarea>
-                                    <span
-                                        class="text-caption"
-                                        style="
-                                            color: var(--color-text-muted);
-                                            display: block;
-                                            margin-top: var(--space-2);
-                                        "
-                                        >Placeholders: {{ name }}, {{ date }},
-                                        {{ certificate_id }}</span
-                                    >
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Font Size</label>
-                                    <input
-                                        v-model.number="
-                                            layout.elements[selectedElement]
-                                                .fontSize
-                                        "
-                                        type="number"
-                                        min="12"
-                                        max="120"
-                                    />
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Font Family</label>
-                                    <select
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .fontFamily
-                                        "
-                                    >
-                                        <option value="">Default (Source Serif 4)</option>
-                                        <option value="'Playfair Display', serif">Playfair Display</option>
-                                        <option value="'Source Serif 4', serif">Source Serif 4</option>
-                                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                                        <optgroup v-if="customFonts.length > 0" label="Custom Fonts">
-                                            <option
-                                                v-for="family in customFonts"
-                                                :key="family"
-                                                :value="`'${family}', sans-serif`"
-                                            >
-                                                {{ family }}
-                                            </option>
-                                        </optgroup>
-                                    </select>
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Color</label>
-                                    <input
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .color
-                                        "
-                                        type="color"
-                                    />
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label"
-                                        >Font Weight</label
-                                    >
-                                    <select
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .fontWeight
-                                        "
-                                    >
-                                        <option value="300">Light</option>
-                                        <option value="400">Normal</option>
-                                        <option value="500">Medium</option>
-                                        <option value="600">Semi Bold</option>
-                                        <option value="700">Bold</option>
-                                        <option value="900">Black</option>
-                                    </select>
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Font Style</label>
-                                    <select
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .fontStyle
-                                        "
-                                    >
-                                        <option value="normal">Normal</option>
-                                        <option value="italic">Italic</option>
-                                    </select>
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label"
-                                        >Text Decoration</label
-                                    >
-                                    <select
-                                        v-model="
-                                            layout.elements[selectedElement]
-                                                .textDecoration
-                                        "
-                                    >
-                                        <option value="none">None</option>
-                                        <option value="underline">
-                                            Underline
-                                        </option>
-                                        <option value="line-through">
-                                            Line Through
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <div
-                                    v-if="
-                                        layout.elements[selectedElement]
-                                            ?.type === 'text'
-                                    "
-                                    class="form-group"
-                                >
-                                    <label class="form-label">Text Align</label>
-                                    <div class="tabs">
-                                        <button
-                                            @click="
-                                                layout.elements[
-                                                    selectedElement
-                                                ].textAlign = 'left'
-                                            "
-                                            :class="[
-                                                'tab',
-                                                (layout.elements[
-                                                    selectedElement
-                                                ].textAlign || 'left') ===
-                                                'left'
-                                                    ? 'tab-active'
-                                                    : '',
-                                            ]"
-                                        >
-                                            Left
-                                        </button>
-                                        <button
-                                            @click="
-                                                layout.elements[
-                                                    selectedElement
-                                                ].textAlign = 'center'
-                                            "
-                                            :class="[
-                                                'tab',
-                                                layout.elements[selectedElement]
-                                                    .textAlign === 'center'
-                                                    ? 'tab-active'
-                                                    : '',
-                                            ]"
-                                        >
-                                            Center
-                                        </button>
-                                        <button
-                                            @click="
-                                                layout.elements[
-                                                    selectedElement
-                                                ].textAlign = 'right'
-                                            "
-                                            :class="[
-                                                'tab',
-                                                layout.elements[selectedElement]
-                                                    .textAlign === 'right'
-                                                    ? 'tab-active'
-                                                    : '',
-                                            ]"
-                                        >
-                                            Right
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label"
-                                        >Position & Size</label
-                                    >
-                                    <div class="form-row">
-                                        <input
-                                            v-model.number="
-                                                layout.elements[selectedElement]
-                                                    .x
-                                            "
-                                            type="number"
-                                            placeholder="X"
-                                        />
-                                        <input
-                                            v-model.number="
-                                                layout.elements[selectedElement]
-                                                    .y
-                                            "
-                                            type="number"
-                                            placeholder="Y"
-                                        />
-                                    </div>
-                                    <div
-                                        class="form-row"
-                                        style="margin-top: var(--space-3)"
-                                    >
-                                        <input
-                                            v-model.number="
-                                                layout.elements[selectedElement]
-                                                    .width
-                                            "
-                                            type="number"
-                                            placeholder="Width"
-                                        />
-                                        <input
-                                            v-model.number="
-                                                layout.elements[selectedElement]
-                                                    .height
-                                            "
-                                            type="number"
-                                            placeholder="Height"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Transition>
+    <!-- BODY -->
+    <div class="ed-body">
+      <!-- LEFT PANEL -->
+      <aside v-if="!previewing" class="ed-left-panel">
+        <div class="ed-section-label">Add to canvas</div>
+        <div class="ed-add-grid">
+          <button
+            class="ed-add-card"
+            @mouseenter="cardIn" @mouseleave="cardOut"
+            @click="addTextElement()"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 6h14M9 6v13M5 6v-1M19 6v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span>Text</span>
+          </button>
+          <button
+            class="ed-add-card"
+            :class="{ active: showImagePanel }"
+            @mouseenter="cardIn" @mouseleave="cardOut"
+            @click="showImagePanel = !showImagePanel; showIconPanel = false"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M3 16l5-4 4 3 4-4 5 4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+            <span>Image</span>
+          </button>
+          <button
+            class="ed-add-card"
+            @mouseenter="cardIn" @mouseleave="cardOut"
+            @click="addElement('sig')"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M3 18c4 0 5-12 8-12s2 8 4 8 2-3 5-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span>Signature</span>
+          </button>
+          <button
+            class="ed-add-card"
+            @mouseenter="cardIn" @mouseleave="cardOut"
+            @click="addElement('shape')"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            <span>Shape</span>
+          </button>
         </div>
 
-        <Teleport to="body">
-            <div
-                v-if="fullscreen"
-                class="fixed inset-0 z-50 flex items-center justify-center"
-                style="
-                    background: rgba(0, 0, 0, 0.95);
-                    backdrop-filter: blur(8px);
-                "
-                @click.self="fullscreen = false"
+        <!-- Image sub-panel -->
+        <div v-if="showImagePanel" class="ed-sub-panel">
+          <div class="ed-sub-panel-title">Pick an image to place</div>
+          <div v-if="allImages.length === 0" class="ed-sub-empty">No images yet. Upload in Asset Library.</div>
+          <div v-else class="ed-asset-grid">
+            <button
+              v-for="img in allImages"
+              :key="img.id"
+              class="ed-asset-thumb"
+              @click="addImageEl(img.filepath); showImagePanel = false"
             >
-                <div
-                    class="absolute flex items-center"
-                    style="
-                        top: var(--space-4);
-                        right: var(--space-4);
-                        gap: var(--space-2);
-                    "
-                >
-                    <button
-                        @click="zoomOut"
-                        class="btn-ghost"
-                        style="
-                            color: white;
-                            background: rgba(255, 255, 255, 0.1);
-                            width: 32px;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 16px;
-                            font-weight: var(--weight-medium);
-                            border-radius: var(--radius-lg);
-                        "
-                        title="Zoom Out"
-                    >
-                        −
-                    </button>
-                    <span
-                        style="
-                            color: white;
-                            padding: 2px var(--space-3);
-                            display: flex;
-                            align-items: center;
-                            font-size: 12px;
-                            font-weight: var(--weight-medium);
-                            background: rgba(255, 255, 255, 0.1);
-                            border-radius: var(--radius-lg);
-                            height: 32px;
-                        "
-                        >{{ Math.round(zoom * 100) }}%</span
-                    >
-                    <button
-                        @click="zoomIn"
-                        class="btn-ghost"
-                        style="
-                            color: white;
-                            background: rgba(255, 255, 255, 0.1);
-                            width: 32px;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 16px;
-                            font-weight: var(--weight-medium);
-                            border-radius: var(--radius-lg);
-                        "
-                        title="Zoom In"
-                    >
-                        +
-                    </button>
-                    <span
-                        style="
-                            width: 1px;
-                            height: 20px;
-                            background: rgba(255, 255, 255, 0.2);
-                        "
-                    ></span>
-                    <button
-                        @click="fullscreen = false"
-                        class="btn-ghost"
-                        style="
-                            color: white;
-                            background: rgba(255, 255, 255, 0.1);
-                            width: 32px;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border-radius: var(--radius-lg);
-                        "
-                        title="Close"
-                    >
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div
-                    class="overflow-auto w-full h-full flex items-center justify-center"
-                    style="padding: var(--space-8)"
-                >
-                    <div
-                        :style="fullscreenCanvasStyle"
-                        class="relative flex-shrink-0"
-                    >
-                        <div v-if="layout.background" class="absolute inset-0">
-                            <img
-                                :src="layout.background"
-                                class="w-full h-full object-contain"
-                            />
-                        </div>
+              <img :src="img.filepath" />
+            </button>
+          </div>
+        </div>
 
-                        <div
-                            v-for="(el, idx) in layout.elements"
-                            :key="'fs-' + idx"
-                            class="absolute cursor-move border border-dashed group"
-                            style="border-color: rgba(9, 9, 11, 0.3)"
-                            :style="elementStyle(el)"
-                            @mousedown="startDrag(idx, $event)"
-                            @click="selectedElement = idx"
-                        >
-                            <div
-                                v-if="el.type === 'text'"
-                                :style="textStyle(el)"
-                            >
-                                {{ el.content }}
-                            </div>
-                            <img
-                                v-else-if="el.type === 'image'"
-                                :src="el.src"
-                                style="width: 100%; height: 100%; object-fit: contain;"
-                            />
-                            <template v-if="selectedElement === idx">
-                                <div
-                                    class="absolute rounded-full cursor-nwse-resize"
-                                    style="top: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'nw', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nesw-resize"
-                                    style="top: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'ne', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nesw-resize"
-                                    style="bottom: -6px; left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'sw', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute rounded-full cursor-nwse-resize"
-                                    style="bottom: -6px; right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'se', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
-                                    style="left: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'w', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute top-1/2 -translate-y-1/2 rounded-full cursor-ew-resize"
-                                    style="right: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'e', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
-                                    style="top: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 'n', $event)
-                                    "
-                                ></div>
-                                <div
-                                    class="absolute left-1/2 -translate-x-1/2 rounded-full cursor-ns-resize"
-                                    style="bottom: -6px; width: 12px; height: 12px; background: var(--color-primary); border: 2px solid var(--color-surface); box-shadow: var(--shadow-sm);"
-                                    @mousedown.stop="
-                                        startResize(idx, 's', $event)
-                                    "
-                                ></div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
+        <div class="ed-section-label" style="margin-top:24px">Background</div>
+        <div class="ed-bg-picker">
+          <button
+            v-for="bg in backgroundThumbs"
+            :key="bg.id"
+            class="ed-bg-thumb"
+            :class="{ active: layout.background === bg.filepath }"
+            @click="layout.background = bg.filepath"
+            :style="{ backgroundImage: `url(${bg.filepath})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+          >
+            <span v-if="layout.background === bg.filepath" class="bg-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </button>
+          <button v-if="backgroundThumbs.length === 0" class="ed-bg-thumb active">
+            <span class="bg-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </button>
+          <button class="ed-bg-thumb add" @click="layout.background = ''">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="ed-bg-color-row">
+          <input
+            type="color"
+            :value="layout.backgroundColor"
+            @input="layout.backgroundColor = ($event.target as HTMLInputElement).value"
+            class="ed-bg-color-pick"
+          />
+          <span class="ed-bg-color-label">Canvas color</span>
+        </div>
+        <div class="ed-bg-hint">
+          <NuxtLink to="/templates/assets">Upload more</NuxtLink> backgrounds via Asset Library.
+        </div>
+
+        <div class="ed-section-label" style="margin-top:24px">Layers</div>
+        <div class="ed-layers">
+          <div
+            v-for="el in layers"
+            :key="el.id"
+            class="ed-layer-row"
+            :class="{ active: el.active, hidden: el.hidden }"
+            @click="selectElement(el.id)"
+          >
+            <span class="layer-dot" :style="{ background: el.dotColor }"></span>
+            <span class="layer-name">{{ el.label }}</span>
+            <span class="layer-eye" @click.stop="toggleHidden(el.id)">
+              <svg v-if="el.hidden" width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3 3.6M6.2 6.2A16 16 0 0 0 2 12s3.5 7 10 7a9.5 9.5 0 0 0 3.3-.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+              <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.7"/>
+                <circle cx="12" cy="12" r="2.4" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CANVAS -->
+      <main class="ed-canvas" @click.self="deselect">
+        <div class="canvas-wrapper">
+          <div class="canvas-label">A4 landscape · 297 × 210 mm</div>
+          <div
+            ref="stageEl"
+            class="canvas-stage"
+            :style="{ transform: `scale(${zoom})`, width: layout.width + 'px', height: layout.height + 'px' }"
+          >
+            <div class="canvas-paper" :style="{ background: layout.backgroundColor }">
+              <img v-if="layout.background" :src="layout.background" class="canvas-bg-img" />
             </div>
-        </Teleport>
+            <div v-if="showGrid" class="canvas-grid"></div>
 
-        <Teleport to="body">
-            <Transition name="modal">
-                <div
-                    v-if="showUnsavedModal"
-                    class="fixed inset-0 z-[9999] flex items-center justify-center"
-                    style="background: hsla(0, 0%, 5%, 0.45); backdrop-filter: blur(4px);"
-                    @click.self="cancelLeave"
+            <!-- elements -->
+            <div
+              v-for="el in visibleElements"
+              :key="el.id"
+              class="canvas-el"
+              :class="{ selected: selectedId === el.id }"
+              :style="el.style"
+              @pointerdown="startDrag(el.id, $event)"
+            >
+              <div v-if="el.kind === 'text' || el.kind === 'field'" class="el-text" :style="el.textStyle">
+                {{ resolveContent(el.id) }}
+              </div>
+              <div v-else-if="el.kind === 'bar'" class="el-bar" :style="{ background: el.color, borderRadius: '2px', width: '100%', height: '100%' }"></div>
+              <div v-else-if="el.kind === 'seal'" class="el-seal" :style="{ color: el.color }">
+                <svg width="100%" height="100%" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="32" cy="9" r="2" fill="currentColor"/>
+                  <path d="M26 18l-4 15 10-5 10 5-4-15" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <circle cx="32" cy="42" r="16" stroke="currentColor" stroke-width="1.2"/>
+                  <path d="M32 32v14M25 44h14M28 38l4-4 4 4M29 48l3-3 3 3" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div v-else-if="el.kind === 'image'" class="el-image">
+                <img :src="el.src" style="width:100%;height:100%;object-fit:contain;" />
+              </div>
+              <div v-else-if="el.kind === 'shape'" class="el-shape" :style="{ background: el.color, borderRadius: '2px' }"></div>
+            </div>
+
+            <!-- selection overlay -->
+            <div v-if="!previewing && selectedEl" class="sel-overlay" :style="selBoxStyle">
+              <span class="sel-corner tl"></span>
+              <span class="sel-corner tr"></span>
+              <span class="sel-corner bl"></span>
+              <span class="sel-corner br"></span>
+              <div class="sel-toolbar">
+                <button @click="duplicateElement" class="sel-tool-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="1.8"/>
+                  </svg>
+                </button>
+                <button @click="deleteElement" class="sel-tool-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 7h14M10 7V5h4v2M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- floating bottom bar -->
+        <div class="ed-float-bar">
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomOut">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <span class="float-label">{{ Math.round(zoom * 100) }}%</span>
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <div class="float-divider"></div>
+          <button class="float-btn" :class="{ active: showGrid }" @mouseenter="softIn" @mouseleave="softOut" @click="showGrid = !showGrid" title="Toggle grid">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 3v18M21 3v18M3 9h18M3 15h18M9 3v18M15 3v18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <div class="float-divider"></div>
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="prevRec">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="float-label wide">Record {{ recordIndex + 1 }} of {{ records.length }}</span>
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="nextRec">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </main>
+
+      <!-- RIGHT PANEL -->
+      <aside v-if="!previewing" class="ed-right-panel">
+        <div class="ed-right-tabs">
+          <button :class="['ed-tab', { active: rightTab === 'design' }]" @click="rightTab = 'design'">Design</button>
+          <button :class="['ed-tab', { active: rightTab === 'data' }]" @click="rightTab = 'data'">Data</button>
+        </div>
+
+        <!-- DESIGN TAB -->
+        <div v-if="rightTab === 'design'" class="ed-tab-content">
+          <template v-if="selectedEl">
+            <div class="ed-prop-header">
+              <span class="prop-icon">
+                <svg v-if="selectedEl.kind === 'seal'" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="10" r="5" stroke="#F5521E" stroke-width="1.9"/>
+                </svg>
+                <svg v-else-if="selectedEl.kind === 'image'" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="16" rx="2" stroke="#F5521E" stroke-width="1.6"/>
+                  <path d="M3 16l5-4 4 3 4-4 5 4" stroke="#F5521E" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+                <div v-else-if="selectedEl.kind === 'bar'" class="prop-bar-icon"></div>
+                <span v-else class="prop-text-icon">T</span>
+              </span>
+              <div>
+                <div class="prop-name">{{ selectedEl.label || selectedEl.id }}</div>
+                <div class="prop-kind">{{ kindLabel(selectedEl) }}</div>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div v-if="isTextKind(selectedEl.kind)" class="ed-prop-section">
+              <div class="prop-label">Content</div>
+              <textarea
+                :value="selectedEl.text"
+                @input="patchSel({ text: ($event.target as HTMLTextAreaElement).value })"
+                rows="2"
+                class="ed-textarea"
+              ></textarea>
+              <div class="prop-hint">Use <code v-pre>{{col_name}}</code> for data from CSV.</div>
+            </div>
+
+            <!-- Data binding -->
+            <div class="ed-prop-section">
+              <div class="prop-label">Data binding</div>
+              <div class="ed-field-bound">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M4 12h16M4 17h10" stroke="#F5521E" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <select
+                  :value="selectedEl.field || ''"
+                  @change="patchFieldBinding(($event.target as HTMLSelectElement).value)"
+                  class="ed-field-select"
                 >
-                    <div
-                        class="surface-raised"
-                        style="
-                            max-width: 420px;
-                            width: calc(100% - 2rem);
-                            padding: var(--space-8);
-                            box-shadow: var(--shadow-lg);
-                        "
-                    >
-                        <div style="margin-bottom: var(--space-5);">
-                            <h2
-                                class="text-heading-sm"
-                                style="margin-bottom: var(--space-3); color: var(--color-text);"
-                            >
-                                Unsaved Changes
-                            </h2>
-                            <p
-                                style="
-                                    color: var(--color-text-secondary);
-                                    font-size: var(--text-sm);
-                                    line-height: var(--leading-relaxed);
-                                "
-                            >
-                                You have unsaved changes. If you leave now, your
-                                changes will be lost.
-                            </p>
-                        </div>
-                        <div
-                            style="
-                                display: flex;
-                                justify-content: flex-end;
-                                gap: var(--space-3);
-                            "
-                        >
-                            <button
-                                @click="cancelLeave"
-                                class="btn-secondary"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                @click="confirmLeave"
-                                class="btn-danger"
-                            >
-                                Discard Changes
-                            </button>
-                        </div>
-                    </div>
+                  <option value="">None (plain text)</option>
+                  <option v-for="col in csvColumns" :key="col" :value="`{${col}}`">{{ col }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Typography -->
+            <div v-if="isTextKind(selectedEl.kind)" class="ed-prop-section">
+              <div class="prop-label">Typography</div>
+              <select
+                :value="selectedEl.font"
+                @change="patchSel({ font: ($event.target as HTMLSelectElement).value })"
+                class="ed-select"
+              >
+                <option v-for="f in availableFonts" :key="f" :value="f">{{ f }}</option>
+              </select>
+              <button class="ed-locked-btn" @click="toastMsg('🔒 Upgrade to Pro to unlock')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+                Upload custom font <span class="pro-tag">PRO</span>
+              </button>
+
+              <div class="ed-prop-row">
+                <div class="ed-prop-col">
+                  <div class="prop-label-sm">Size</div>
+                  <div class="ed-range-row">
+                    <input type="range" min="10" max="72" :value="selectedEl.size" @input="patchSel({ size: +($event.target as HTMLInputElement).value })" />
+                    <span class="range-val">{{ selectedEl.size }}</span>
+                  </div>
                 </div>
-            </Transition>
-        </Teleport>
+              </div>
+
+              <div class="ed-prop-row">
+                <div class="ed-prop-col">
+                  <div class="prop-label-sm">Weight</div>
+                  <select
+                    :value="selectedEl.weight"
+                    @change="patchSel({ weight: ($event.target as HTMLSelectElement).value })"
+                    class="ed-select sm"
+                  >
+                    <option value="400">Regular</option>
+                    <option value="500">Medium</option>
+                    <option value="600">Semibold</option>
+                    <option value="700">Bold</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="prop-label-sm">Align</div>
+                  <div class="ed-align-group">
+                    <button :class="['align-btn', { active: selectedEl.align === 'left' }]" @click="patchSel({ align: 'left' })">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h11M4 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <button :class="['align-btn', { active: selectedEl.align === 'center' }]" @click="patchSel({ align: 'center' })">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M5 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <button :class="['align-btn', { active: selectedEl.align === 'right' }]" @click="patchSel({ align: 'right' })">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M9 12h11M6 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Color -->
+            <div class="ed-prop-section">
+              <div class="prop-label">Color</div>
+              <div class="ed-swatches">
+                <button
+                  v-for="c in palette"
+                  :key="c"
+                  class="swatch"
+                  :class="{ active: selectedEl.color === c }"
+                  :style="{ background: c }"
+                  @click="patchSel({ color: c })"
+                ></button>
+                <input
+                  type="color"
+                  :value="selectedEl.color"
+                  @input="patchSel({ color: ($event.target as HTMLInputElement).value })"
+                  class="swatch-picker"
+                />
+              </div>
+            </div>
+
+            <!-- Opacity -->
+            <div class="ed-prop-section">
+              <div class="prop-label">Opacity</div>
+              <div class="ed-range-row">
+                <input type="range" min="20" max="100" :value="selectedEl.opacity" @input="patchSel({ opacity: +($event.target as HTMLInputElement).value })" />
+                <span class="range-val">{{ selectedEl.opacity }}%</span>
+              </div>
+            </div>
+          </template>
+
+          <div v-else class="ed-empty-state">
+            <div class="empty-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M5 3l14 9-6 1.5L11 20 5 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="empty-title">Nothing selected</div>
+            <div class="empty-text">Click any element on the canvas to edit its style, or add one from the left.</div>
+          </div>
+        </div>
+
+        <!-- DATA TAB -->
+        <div v-if="rightTab === 'data'" class="ed-tab-content">
+          <div class="ed-data-header">
+            <div>
+              <div class="data-title">{{ csvFile || 'Sample data' }}</div>
+              <div class="data-meta">{{ records.length }} records · {{ csvColumns.length }} columns</div>
+            </div>
+            <label class="ed-btn-sm-outline ed-upload-btn">
+              <input
+                type="file"
+                accept=".csv"
+                class="ed-file-hidden"
+                @change="handleCsvUpload"
+              />
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Replace
+            </label>
+          </div>
+
+          <div class="prop-label" style="margin-top:16px">Column mapping</div>
+          <div class="ed-mappings">
+            <div v-for="m in csvColumns" :key="m" class="ed-map-row">
+              <span class="map-col">{{ m }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="#6E665E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="map-field">auto-mapped</span>
+            </div>
+          </div>
+
+          <div class="ed-data-rec-header">
+            <span class="prop-label">Records</span>
+            <span class="data-tap-hint">tap to preview</span>
+          </div>
+          <div class="ed-records">
+            <div
+              v-for="(r, i) in recordRows"
+              :key="i"
+              class="ed-record-row"
+              :class="{ active: r.active }"
+              @click="recordIndex = i"
+            >
+              <span class="rec-num">{{ r.num }}</span>
+              <div class="rec-info">
+                <div class="rec-name">{{ r.name }}</div>
+                <div class="rec-course">{{ r.course }}</div>
+              </div>
+              <span v-if="r.active" class="rec-dot"></span>
+            </div>
+          </div>
+
+          <button
+            :disabled="saving"
+            class="ed-btn-accent full"
+            @mouseenter="ctaIn"
+            @mouseleave="ctaOut"
+            @click="saveTemplate"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M5 19h14M12 4v14M8 11l4-4 4 4" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {{ saving ? 'Saving...' : 'Save Template' }}
+          </button>
+          <div class="data-watermark-note">Free plan exports include a small watermark.</div>
+        </div>
+      </aside>
     </div>
+
+    <!-- Toast -->
+    <BaseToast :visible="toastCtrl.visible.value">
+      {{ toastCtrl.message.value }}
+    </BaseToast>
+  </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute();
 const router = useRouter();
+const isNew = computed(() => route.params.id === 'new');
+const templateId = computed(() => (isNew.value ? null : parseInt(route.params.id as string)));
 
-const isNew = computed(() => route.params.id === "new");
-const templateId = computed(() =>
-    isNew.value ? null : parseInt(route.params.id as string),
-);
-
-const templateName = ref("");
-const saving = ref(false);
-const selectedElement = ref<number | null>(null);
-const fullscreen = ref(false);
-const settingsVisible = ref(true);
-const zoom = ref(0.8);
-const contextMenu = ref({
-    visible: false,
-    x: 0,
-    y: 0,
-    elementIndex: null as number | null
+useHead({
+  bodyAttrs: { style: 'margin:0;overflow:hidden;' },
 });
-const showUnsavedModal = ref(false);
-const pendingNavigation = ref<any>(null);
 
-interface LayoutElement {
-    type: "text" | "image";
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    content?: string;
-    fontSize?: number;
-    fontFamily?: string;
-    color?: string;
-    fontWeight?: string;
-    fontStyle?: string;
-    textDecoration?: string;
-    textAlign?: string;
-    src?: string;
+const { softIn, softOut, whiteOut, ctaIn, ctaOut, cardIn, cardOut } = useHoverIntents()
+const toastCtrl = useToast()
+
+// ── State ──
+const templateName = ref('');
+const saving = ref(false);
+const selectedId = ref<string | null>(null);
+const rightTab = ref<'design' | 'data'>('design');
+const recordIndex = ref(0);
+const zoom = ref(1);
+const showImagePanel = ref(false);
+const showGrid = ref(false);
+const previewing = ref(false);
+const csvFile = ref('');
+const csvColumns = ref<string[]>(['full_name', 'course', 'date']);
+const editingTitle = ref(false);
+const hiddenIds = ref<Record<string, boolean>>({});
+const loaded = ref(false);
+
+// ── Assets & fonts ──
+const { data: assets } = await useFetch('/api/assets');
+const { data: fonts } = await useFetch('/api/fonts');
+
+const backgrounds = computed(() => assets.value?.filter((a: any) => a.type === 'background') || []);
+const allImages = computed(() => assets.value?.filter((a: any) => a.type === 'logo' || a.type === 'free-image') || []);
+
+const customFonts = computed(() => {
+  if (!fonts.value) return []
+  return [...new Set(fonts.value.map((f: any) => f.fontFamily))].sort() as string[]
+});
+const availableFonts = computed(() => ['General Sans', 'Playfair Display', 'Allura', 'Inter', ...customFonts.value]);
+
+const backgroundThumbs = computed(() => {
+  // first one is always the blank/color-only option
+  const all = assets.value?.filter((a: any) => a.type === 'background' || a.type === 'free-image') || [];
+  return all;
+});
+
+// ── Colors ──
+const palette = ['#14110E', '#6E665E', '#F5521E', '#2F6BFF', '#1F8A5B'];
+
+// ── Element model ──
+interface EdElement {
+  id: string;
+  kind: 'text' | 'field' | 'seal' | 'bar' | 'image' | 'shape';
+  label: string;
+  x: number; y: number; w: number; h: number;
+  text?: string;
+  field?: string;
+  font?: string;
+  size?: number;
+  weight?: string;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  letter?: number;
+  italic?: boolean;
+  opacity?: number;
+  src?: string;
 }
 
 interface Layout {
-    width: number;
-    height: number;
-    background: string;
-    backgroundColor: string;
-    elements: LayoutElement[];
+  width: number;
+  height: number;
+  background: string;
+  backgroundColor: string;
+  elements: any[];
 }
 
 const layout = reactive<Layout>({
-    width: 1754,
-    height: 1240,
-    background: "",
-    backgroundColor: "#ffffff",
-    elements: [],
+  width: 820,
+  height: 580,
+  background: '',
+  backgroundColor: '#ffffff',
+  elements: [],
 });
 
-const { data: assets } = await useFetch("/api/assets");
-const { data: fonts } = await useFetch("/api/fonts");
+const defaultElements: EdElement[] = [
+  { id: 'seal', kind: 'seal', label: 'Seal', x: 378, y: 66, w: 64, h: 64, color: '#F5521E', opacity: 100 },
+  { id: 'title', kind: 'text', label: 'Title', text: 'CERTIFICATE OF ACHIEVEMENT', x: 150, y: 150, w: 520, h: 30, font: 'General Sans', size: 17, weight: '600', color: '#6E665E', align: 'center', letter: 5, opacity: 100 },
+  { id: 'pre', kind: 'text', label: 'Subtitle', text: 'This is proudly presented to', x: 210, y: 196, w: 400, h: 24, font: 'Playfair Display', size: 15, weight: '500', color: '#6E665E', align: 'center', letter: 0, italic: true, opacity: 100 },
+  { id: 'name', kind: 'field', field: '{full_name}', text: '{full_name}', label: 'Name (field)', x: 110, y: 224, w: 600, h: 60, font: 'Playfair Display', size: 46, weight: '600', color: '#14110E', align: 'center', letter: 0, opacity: 100 },
+  { id: 'rule', kind: 'bar', label: 'Divider', x: 365, y: 304, w: 90, h: 4, color: '#F5521E', opacity: 100 },
+  { id: 'body', kind: 'text', text: '{course}', label: 'Course line', x: 160, y: 324, w: 500, h: 44, font: 'General Sans', size: 14, weight: '400', color: '#6E665E', align: 'center', letter: 0, opacity: 100 },
+  { id: 'sig', kind: 'text', text: 'A. Rivera', label: 'Signature', x: 200, y: 432, w: 170, h: 50, font: 'Allura', size: 30, weight: '400', color: '#14110E', align: 'center', letter: 0, opacity: 100 },
+  { id: 'date', kind: 'field', field: '{date}', text: '{date}', label: 'Date (field)', x: 460, y: 440, w: 170, h: 40, font: 'General Sans', size: 14, weight: '500', color: '#14110E', align: 'center', letter: 0, opacity: 100 },
+];
 
-const combinedLogos = computed(
-    () =>
-        assets.value?.filter(
-            (a) => a.type === "logo" || a.type === "free-image",
-        ) || [],
-);
-const combinedBackgrounds = computed(
-    () =>
-        assets.value?.filter(
-            (a) => a.type === "background" || a.type === "free-image",
-        ) || [],
-);
+const elements = ref<EdElement[]>(JSON.parse(JSON.stringify(defaultElements)));
 
-// Get unique custom font families
-const customFonts = computed(() => {
-    if (!fonts.value) return []
-    const families = new Set<string>()
-    fonts.value.forEach(font => families.add(font.fontFamily))
-    return Array.from(families).sort()
-})
+const records = ref([
+  { full_name: 'Olivia Hartwell', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+  { full_name: 'Marcus Lee', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+  { full_name: 'Priya Nair', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+  { full_name: 'Daniel Okoro', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+  { full_name: 'Sofia Marchetti', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+  { full_name: 'Yuki Tanaka', course: 'for completing the Advanced Product Design program', date: 'June 12, 2026' },
+]);
 
-// Load custom fonts dynamically
+// ── Backend element ↔ EdElement conversion ──
+function oldElToEd(el: any, id?: string): EdElement {
+  const kind = el.kind || (el.type === 'image' ? 'image' : el.field ? 'field' : 'text');
+  const ed: EdElement = {
+    id: id || el.id || 'el' + nextId++,
+    kind,
+    label: el.label || (el.content || el.text || kind).slice(0, 20),
+    x: el.x || 100,
+    y: el.y || 100,
+    w: el.w || el.width || 200,
+    h: el.h || el.height || 40,
+    text: el.text || el.content,
+    field: el.field,
+    font: el.font || el.fontFamily?.replace(/'/g, '') || 'General Sans',
+    size: el.size || el.fontSize || 16,
+    weight: el.weight || el.fontWeight || '400',
+    color: el.color || '#14110E',
+    align: el.align || el.textAlign || 'center',
+    letter: el.letter || 0,
+    italic: el.italic || el.fontStyle === 'italic' || false,
+    opacity: el.opacity != null ? el.opacity : 100,
+    src: el.src,
+  };
+  return ed;
+}
+
+function edElToOld(el: EdElement): any {
+  const fieldName = el.field ? el.field.replace(/[{}]/g, '') : '';
+  const content = el.text || (fieldName ? `{${fieldName}}` : '');
+  return {
+    id: el.id,
+    kind: el.kind,
+    type: el.kind === 'image' ? 'image' : 'text',
+    label: el.label,
+    x: el.x, y: el.y,
+    width: el.w, height: el.h,
+    text: el.text, content,
+    field: el.field,
+    font: el.font, fontFamily: el.font ? `'${el.font}', serif` : '',
+    size: el.size, fontSize: el.size,
+    weight: el.weight, fontWeight: el.weight,
+    color: el.color,
+    align: el.align, textAlign: el.align,
+    letter: el.letter,
+    italic: el.italic, fontStyle: el.italic ? 'italic' : 'normal',
+    opacity: el.opacity,
+    src: el.src,
+    iconId: el.iconId,
+  };
+}
+
 watch(fonts, (newFonts) => {
-    if (newFonts && newFonts.length > 0) {
-        newFonts.forEach(font => {
-            const fontFace = new FontFace(
-                font.fontFamily,
-                `url(${font.filepath})`,
-                {
-                    weight: font.fontWeight || '400',
-                    style: font.fontStyle || 'normal'
-                }
-            )
-            fontFace.load().then((loadedFont) => {
-                document.fonts.add(loadedFont)
-            }).catch(err => {
-                console.error(`Failed to load font ${font.fontFamily}:`, err)
-            })
-        })
-    }
-}, { immediate: true })
+  if (!newFonts || newFonts.length === 0) return;
+  newFonts.forEach((font: any) => {
+    const ff = new FontFace(font.fontFamily, `url(${font.filepath})`, {
+      weight: font.fontWeight || '400',
+      style: font.fontStyle || 'normal',
+    });
+    ff.load().then(f => document.fonts.add(f)).catch(console.error);
+  });
+}, { immediate: true });
 
-if (!isNew.value && templateId.value) {
-    const { data: template } = await useFetch(
-        `/api/templates/${templateId.value}`,
-    );
-    if (template.value) {
-        templateName.value = template.value.name;
-        const savedLayout = JSON.parse(template.value.layout);
-        Object.assign(layout, savedLayout);
-    }
-}
+// ── Computed ──
+const selectedEl = computed(() => elements.value.find(e => e.id === selectedId.value) || null);
 
-// Track changes for unsaved warning
-const hasUnsavedChanges = ref(false)
-const initialState = ref('')
-
-// Store initial state after loading
-onMounted(() => {
-    initialState.value = JSON.stringify({
-        name: templateName.value,
-        layout: JSON.parse(JSON.stringify(layout))
-    })
-})
-
-// Watch for changes
-watch([templateName, layout], () => {
-    const currentState = JSON.stringify({
-        name: templateName.value,
-        layout: JSON.parse(JSON.stringify(layout))
-    })
-    hasUnsavedChanges.value = currentState !== initialState.value
-}, { deep: true })
-
-// Warn before leaving
-onBeforeRouteLeave((to, from, next) => {
-    if (hasUnsavedChanges.value) {
-        showUnsavedModal.value = true
-        pendingNavigation.value = next
-    } else {
-        next()
-    }
-})
-
-function confirmLeave() {
-    showUnsavedModal.value = false
-    if (pendingNavigation.value) {
-        pendingNavigation.value()
-        pendingNavigation.value = null
-    }
-}
-
-function cancelLeave() {
-    showUnsavedModal.value = false
-    if (pendingNavigation.value) {
-        pendingNavigation.value(false)
-        pendingNavigation.value = null
-    }
-}
-
-// Warn before closing/refreshing browser
-onMounted(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-        if (hasUnsavedChanges.value) {
-            e.preventDefault()
-            e.returnValue = ''
-        }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    
-    onUnmounted(() => {
-        window.removeEventListener('beforeunload', handleBeforeUnload)
-    })
-})
-
-function zoomIn() {
-    zoom.value = Math.min(zoom.value + 0.1, 2);
-}
-
-function zoomOut() {
-    zoom.value = Math.max(zoom.value - 0.1, 0.3);
-}
-
-const canvasContainerRef = ref<HTMLElement | null>(null);
-
-const scale = computed(() => {
-    if (fullscreen.value) {
-        const pad = 96;
-        const fitScale = Math.min(
-            (window.innerWidth - pad) / layout.width,
-            (window.innerHeight - pad) / layout.height,
-            1,
-        );
-        return (fitScale * zoom.value) / 0.8;
-    }
-
-    // Auto-fit to container in normal mode
-    if (typeof window !== "undefined" && canvasContainerRef.value) {
-        const container = canvasContainerRef.value;
-        const padding = 16;
-        const availableWidth = container.clientWidth - padding;
-        const availableHeight = container.clientHeight - padding;
-        const fitScale = Math.min(
-            availableWidth / layout.width,
-            availableHeight / layout.height,
-            1,
-        );
-        return (fitScale * zoom.value) / 0.8;
-    }
-
-    return zoom.value;
+const visibleElements = computed(() => {
+  return elements.value
+    .filter(el => !hiddenIds.value[el.id])
+    .map(el => {
+      const base: any = {
+        left: el.x + 'px',
+        top: el.y + 'px',
+        width: el.w + 'px',
+        height: el.h + 'px',
+        opacity: (el.opacity || 100) / 100,
+        cursor: 'move',
+        userSelect: 'none',
+        touchAction: 'none',
+        overflow: 'hidden',
+      };
+      const textStyle: any = {};
+      if (isTextKind(el.kind)) {
+        textStyle.fontFamily = `'${el.font}', serif`;
+        textStyle.fontSize = (el.size || 16) + 'px';
+        textStyle.fontWeight = el.weight || '400';
+        textStyle.color = el.color;
+        textStyle.textAlign = el.align || 'center';
+        textStyle.letterSpacing = (el.letter || 0) + 'px';
+        textStyle.lineHeight = '1.25';
+        textStyle.fontStyle = el.italic ? 'italic' : 'normal';
+        textStyle.display = 'flex';
+        textStyle.alignItems = 'center';
+        textStyle.justifyContent = el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center';
+        textStyle.width = '100%';
+        textStyle.height = '100%';
+      }
+      return {
+        id: el.id,
+        kind: el.kind,
+        color: el.color,
+        src: el.src,
+        iconId: el.iconId,
+        style: base,
+        textStyle,
+      };
+    });
 });
 
-const canvasStyle = computed(() => ({
-    width: layout.width + "px",
-    height: layout.height + "px",
-    transform: `scale(${scale.value})`,
-    transformOrigin: "top left",
-    background: layout.backgroundColor,
-}));
+const layers = computed(() =>
+  elements.value.map(el => ({
+    id: el.id,
+    label: el.label || el.id,
+    active: el.id === selectedId.value,
+    hidden: !!hiddenIds.value[el.id],
+    dotColor: el.kind === 'bar' ? '#F5521E' : el.color || '#14110E',
+  }))
+);
 
-const fullscreenCanvasStyle = computed(() => ({
-    width: layout.width + "px",
-    height: layout.height + "px",
-    transform: `scale(${scale.value})`,
-    transformOrigin: "center center",
-    background: layout.backgroundColor,
-}));
+const selBoxStyle = computed(() => {
+  const el = selectedEl.value;
+  if (!el) return {};
+  return {
+    left: (el.x - 6) + 'px',
+    top: (el.y - 6) + 'px',
+    width: (el.w + 12) + 'px',
+    height: (el.h + 12) + 'px',
+  };
+});
 
-function elementStyle(el: LayoutElement) {
-    return {
-        left: el.x + "px",
-        top: el.y + "px",
-        width: el.width + "px",
-        height: el.height + "px",
-        overflow: "hidden",
-    };
+const recordRows = computed(() =>
+  records.value.map((r, i) => ({
+    num: String(i + 1).padStart(2, '0'),
+    name: r.full_name,
+    course: 'Advanced Product Design',
+    active: i === recordIndex.value,
+  }))
+);
+
+const mappings = [
+  { col: 'full_name', field: 'Recipient name' },
+  { col: 'course', field: 'Body line' },
+  { col: 'date', field: 'Date' },
+];
+
+// ── Helpers ──
+function isTextKind(kind: string) {
+  return kind === 'text' || kind === 'field';
+}
+function isFieldKind(kind: string) {
+  return kind === 'field';
+}
+function kindLabel(el: EdElement) {
+  if (el.kind === 'seal') return 'Seal';
+  if (el.kind === 'bar') return 'Divider';
+  if (isFieldKind(el.kind)) return 'Data field';
+  if (el.kind === 'image') return 'Image';
+  return 'Text';
 }
 
-function textStyle(el: LayoutElement) {
-    return {
-        fontFamily: el.fontFamily || "var(--font-body)",
-        fontSize: (el.fontSize || 24) + "px",
-        color: el.color || "#000000",
-        fontWeight: el.fontWeight || "400",
-        fontStyle: el.fontStyle || "normal",
-        textDecoration: el.textDecoration || "none",
-        textAlign: el.textAlign || "left",
-    };
+function resolveContent(elId: string) {
+  const el = elements.value.find(e => e.id === elId);
+  if (!el) return '';
+  const rec = records.value[recordIndex.value] || {};
+  const text = el.text || el.content || '';
+
+  // resolve {col} placeholders with actual data
+  return text.replace(/\{(\w+)\}/g, (_, key) => rec[key] ?? `{${key}}`);
 }
 
-function addTextElement() {
-    layout.elements.push({
-        type: "text",
-        x: 100,
-        y: 100,
-        width: 300,
-        height: 50,
-        content: "{{name}}",
-        fontSize: 32,
-        color: "#000000",
-        fontWeight: "700",
-        fontStyle: "normal",
-        textDecoration: "none",
-        textAlign: "left",
-    });
-    selectedElement.value = layout.elements.length - 1;
+let nextId = 100;
+
+// clear drag when elements change (DOM refs become stale)
+watch(elements, () => {
+  if (dragState?.el) {
+    dragState.el.style.transform = '';
+    dragState.el.style.transition = '';
+    dragState.el.style.willChange = '';
+  }
+  dragState = null;
+});
+
+function addElement(kind: string) {
+  const id = 'el' + nextId++;
+  const base = { x: 300, y: 250, w: 200, h: 40, color: '#14110E', opacity: 100 };
+  let el: EdElement;
+  if (kind === 'text') el = { id, kind: 'text', text: 'New text', label: 'Text', ...base, font: 'General Sans', size: 18, weight: '400', align: 'center' };
+  else if (kind === 'sig') el = { id, kind: 'text', text: 'Signature', label: 'Signature', ...base, w: 170, h: 50, font: 'Allura', size: 30, weight: '400', color: '#14110E', align: 'center', letter: 0, opacity: 100 };
+  else if (kind === 'shape') el = { id, kind: 'bar', label: 'Shape', ...base, h: 4, color: '#14110E', opacity: 100 };
+  else if (kind === 'seal') el = { id, kind: 'seal', label: 'Seal', ...base, x: 370, y: 60, w: 80, h: 80, color: '#F5521E', opacity: 100 };
+  else el = { id, kind: 'text' as any, label: 'Element', ...base, font: 'General Sans', size: 16, weight: '400', align: 'center' };
+  elements.value = [...elements.value, el];
 }
 
-function addImageElement(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const src = select.value;
-    if (!src) return;
-
-    layout.elements.push({
-        type: "image",
-        x: 100,
-        y: 100,
-        width: 150,
-        height: 150,
-        src,
-    });
-    selectedElement.value = layout.elements.length - 1;
-    select.value = "";
+function selectElement(id: string) {
+  selectedId.value = id;
+  rightTab.value = 'design';
 }
 
-function deleteElement() {
-    if (selectedElement.value === null) return;
-    layout.elements.splice(selectedElement.value, 1);
-    selectedElement.value = null;
+function deselect() {
+  selectedId.value = null;
 }
 
-function showContextMenu(idx: number, event: MouseEvent) {
-    selectedElement.value = idx
-    contextMenu.value = {
-        visible: true,
-        x: event.clientX,
-        y: event.clientY,
-        elementIndex: idx
-    }
+function toggleHidden(id: string) {
+  hiddenIds.value = { ...hiddenIds.value, [id]: !hiddenIds.value[id] };
+}
+
+function patchSel(patch: Partial<EdElement>) {
+  const currentId = selectedId.value;
+  if (!currentId) return;
+  const idx = elements.value.findIndex(e => e.id === currentId);
+  if (idx === -1) return;
+  const updated = { ...elements.value[idx], ...patch };
+  const newArr = [...elements.value];
+  newArr[idx] = updated;
+  elements.value = newArr;
+  selectedId.value = currentId;
+}
+
+function patchFieldBinding(value: string) {
+  if (!selectedId.value) return;
+  const el = elements.value.find(e => e.id === selectedId.value);
+  if (!el) return;
+  const patch: Partial<EdElement> = {
+    field: value || undefined,
+    kind: value ? 'field' : 'text',
+  };
+  // always set text to placeholder when binding
+  if (value) patch.text = value;
+  patchSel(patch);
 }
 
 function duplicateElement() {
-    if (contextMenu.value.elementIndex === null) return
-    
-    const original = layout.elements[contextMenu.value.elementIndex]
-    const duplicate = JSON.parse(JSON.stringify(original))
-    
-    // Offset the duplicate slightly
-    duplicate.x += 20
-    duplicate.y += 20
-    
-    layout.elements.push(duplicate)
-    selectedElement.value = layout.elements.length - 1
-    contextMenu.value.visible = false
+  const el = selectedEl.value;
+  if (!el) return;
+  const id = 'el' + nextId++;
+  const dup: EdElement = { ...JSON.parse(JSON.stringify(el)), id, x: el.x + 20, y: el.y + 20 };
+  elements.value = [...elements.value, dup];
+  selectedId.value = id;
 }
 
-function deleteElementFromContext() {
-    if (contextMenu.value.elementIndex === null) return
-    
-    layout.elements.splice(contextMenu.value.elementIndex, 1)
-    selectedElement.value = null
-    contextMenu.value.visible = false
+function deleteElement() {
+  const id = selectedId.value;
+  if (!id) return;
+  elements.value = elements.value.filter(e => e.id !== id);
+  selectedId.value = null;
 }
 
-// Close context menu when clicking outside
-function hideContextMenu() {
-    contextMenu.value.visible = false
+// ── Drag ──
+let dragState: { id: string; sx: number; sy: number; ox: number; oy: number; el: HTMLElement | null } | null = null;
+
+function startDrag(id: string, e: PointerEvent) {
+  e.stopPropagation();
+  e.preventDefault();
+  const el = elements.value.find(x => x.id === id);
+  if (!el) return;
+  selectedId.value = id;
+  rightTab.value = 'design';
+  const domEl = (e.currentTarget as HTMLElement).closest('.canvas-el') as HTMLElement;
+  if (domEl) {
+    domEl.style.transition = 'none';
+    domEl.style.willChange = 'transform';
+    domEl.setPointerCapture(e.pointerId);
+  }
+  dragState = { id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y, el: domEl };
 }
 
-onMounted(() => {
-    document.addEventListener('click', hideContextMenu)
-})
+function onPointerMove(e: PointerEvent) {
+  if (!dragState?.el) return;
+  const z = zoom.value;
+  const dx = (e.clientX - dragState.sx) / z;
+  const dy = (e.clientY - dragState.sy) / z;
+  dragState.el.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+
+function onPointerUp(e: PointerEvent) {
+  if (!dragState) return;
+  const z = zoom.value;
+  const dx = (e.clientX - dragState.sx) / z;
+  const dy = (e.clientY - dragState.sy) / z;
+  const nx = Math.round(dragState.ox + dx);
+  const ny = Math.round(dragState.oy + dy);
+
+  const idx = elements.value.findIndex(el => el.id === dragState!.id);
+  if (idx !== -1) {
+    const updated = { ...elements.value[idx], x: nx, y: ny };
+    elements.value = [...elements.value.slice(0, idx), updated, ...elements.value.slice(idx + 1)];
+  }
+  if (dragState.el) {
+    dragState.el.style.transform = '';
+    dragState.el.style.transition = '';
+    dragState.el.style.willChange = '';
+  }
+  dragState = null;
+}
+
+// ── Zoom, records ──
+function zoomIn() { zoom.value = Math.min(1.5, +(zoom.value + 0.1).toFixed(2)); }
+function zoomOut() { zoom.value = Math.max(0.5, +(zoom.value - 0.1).toFixed(2)); }
+function prevRec() { recordIndex.value = (recordIndex.value - 1 + records.value.length) % records.value.length; }
+function nextRec() { recordIndex.value = (recordIndex.value + 1) % records.value.length; }
+
+function toastMsg(m: string) { toastCtrl.show(m); }
+
+function addTextElement() {
+  addElement('text');
+}
+
+function addImageEl(src: string) {
+  const id = 'el' + nextId++;
+  const el: EdElement = { id, kind: 'image', label: 'Image', x: 260, y: 160, w: 300, h: 200, src, color: '#14110E', opacity: 100 };
+  elements.value = [...elements.value, el];
+  selectedId.value = null;
+  showImagePanel.value = false;
+}
+
+// ── Template loading ──
+onMounted(async () => {
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+
+  // Load custom fonts
+  if (fonts.value && fonts.value.length > 0) {
+    fonts.value.forEach((font: any) => {
+      const ff = new FontFace(font.fontFamily, `url(${font.filepath})`, {
+        weight: font.fontWeight || '400',
+        style: font.fontStyle || 'normal',
+      });
+      ff.load().then(f => document.fonts.add(f)).catch(console.error);
+    });
+  }
+
+  if (!isNew.value && templateId.value) {
+    try {
+      const data: any = await $fetch(`/api/templates/${templateId.value}`);
+      if (data) {
+        templateName.value = data.name || '';
+        const saved: Layout = data.layout ? (typeof data.layout === 'string' ? JSON.parse(data.layout) : data.layout) : null;
+        if (saved) {
+          layout.width = saved.width || 820;
+          layout.height = saved.height || 580;
+          layout.backgroundColor = saved.backgroundColor || '#ffffff';
+          layout.background = saved.background || '';
+          if (saved.elements && Array.isArray(saved.elements)) {
+            // calculate scale factor if saved layout dimensions differ from editor stage (820×580)
+            const sx = 820 / (saved.width || 820);
+            const sy = 580 / (saved.height || 580);
+            const useScale = saved.width !== 820 || saved.height !== 580;
+            elements.value = saved.elements.map((e: any, i: number) => {
+              const el = oldElToEd(e, e.id || 'loaded_' + i);
+              if (useScale) {
+                el.x = Math.round(el.x * sx);
+                el.y = Math.round(el.y * sy);
+                el.w = Math.round(el.w * sx);
+                el.h = Math.round(el.h * sy);
+              }
+              return el;
+            });
+            nextId = Math.max(nextId, elements.value.length + 1);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load template:', e);
+    }
+  }
+  loaded.value = true;
+});
 
 onUnmounted(() => {
-    document.removeEventListener('click', hideContextMenu)
-})
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+});
 
-type ResizeDir = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-
-let dragState: {
-    mode: "move" | "resize";
-    idx: number;
-    startX: number;
-    startY: number;
-    elX: number;
-    elY: number;
-    elW: number;
-    elH: number;
-    dir?: ResizeDir;
-} | null = null;
-
-function startDrag(idx: number, event: MouseEvent) {
-    event.preventDefault();
-    selectedElement.value = idx;
-
-    const el = layout.elements[idx];
-    dragState = {
-        mode: "move",
-        idx,
-        startX: event.clientX,
-        startY: event.clientY,
-        elX: el.x,
-        elY: el.y,
-        elW: el.width,
-        elH: el.height,
-    };
-
-    document.addEventListener("mousemove", onDrag);
-    document.addEventListener("mouseup", stopDrag);
-}
-
-function startResize(idx: number, dir: ResizeDir, event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    selectedElement.value = idx;
-
-    const el = layout.elements[idx];
-    dragState = {
-        mode: "resize",
-        idx,
-        startX: event.clientX,
-        startY: event.clientY,
-        elX: el.x,
-        elY: el.y,
-        elW: el.width,
-        elH: el.height,
-        dir,
-    };
-
-    document.addEventListener("mousemove", onDrag);
-    document.addEventListener("mouseup", stopDrag);
-}
-
-function onDrag(event: MouseEvent) {
-    if (!dragState) return;
-
-    const dx = (event.clientX - dragState.startX) / scale.value;
-    const dy = (event.clientY - dragState.startY) / scale.value;
-
-    if (dragState.mode === "move") {
-        layout.elements[dragState.idx].x = Math.round(dragState.elX + dx);
-        layout.elements[dragState.idx].y = Math.round(dragState.elY + dy);
-    } else if (dragState.mode === "resize" && dragState.dir) {
-        const el = layout.elements[dragState.idx];
-        const dir = dragState.dir;
-        const lockAspectRatio = event.shiftKey;
-        const aspectRatio = dragState.elW / dragState.elH;
-
-        if (lockAspectRatio) {
-            // Preserve aspect ratio when Shift is held
-            if (dir === "e") {
-                el.width = Math.max(20, Math.round(dragState.elW + dx));
-                el.height = Math.round(el.width / aspectRatio);
-            } else if (dir === "w") {
-                el.width = Math.max(20, Math.round(dragState.elW - dx));
-                el.height = Math.round(el.width / aspectRatio);
-                el.x = Math.round(dragState.elX + (dragState.elW - el.width));
-            } else if (dir === "s") {
-                el.height = Math.max(20, Math.round(dragState.elH + dy));
-                el.width = Math.round(el.height * aspectRatio);
-            } else if (dir === "n") {
-                el.height = Math.max(20, Math.round(dragState.elH - dy));
-                el.width = Math.round(el.height * aspectRatio);
-                el.y = Math.round(dragState.elY + (dragState.elH - el.height));
-            } else if (dir === "se") {
-                el.width = Math.max(20, Math.round(dragState.elW + dx));
-                el.height = Math.round(el.width / aspectRatio);
-            } else if (dir === "sw") {
-                el.width = Math.max(20, Math.round(dragState.elW - dx));
-                el.height = Math.round(el.width / aspectRatio);
-                el.x = Math.round(dragState.elX + (dragState.elW - el.width));
-            } else if (dir === "ne") {
-                el.width = Math.max(20, Math.round(dragState.elW + dx));
-                el.height = Math.round(el.width / aspectRatio);
-                el.y = Math.round(dragState.elY + (dragState.elH - el.height));
-            } else if (dir === "nw") {
-                el.width = Math.max(20, Math.round(dragState.elW - dx));
-                el.height = Math.round(el.width / aspectRatio);
-                el.x = Math.round(dragState.elX + (dragState.elW - el.width));
-                el.y = Math.round(dragState.elY + (dragState.elH - el.height));
-            }
-        } else {
-            // Free resize when Shift not held
-            if (dir.includes("e"))
-                el.width = Math.max(20, Math.round(dragState.elW + dx));
-            if (dir.includes("w")) {
-                el.width = Math.max(20, Math.round(dragState.elW - dx));
-                el.x = Math.round(dragState.elX + dx);
-            }
-            if (dir.includes("s"))
-                el.height = Math.max(20, Math.round(dragState.elH + dy));
-            if (dir.includes("n")) {
-                el.height = Math.max(20, Math.round(dragState.elH - dy));
-                el.y = Math.round(dragState.elY + dy);
-            }
-        }
-    }
-}
-
-function stopDrag() {
-    dragState = null;
-    document.removeEventListener("mousemove", onDrag);
-    document.removeEventListener("mouseup", stopDrag);
-}
-
+// ── Save ──
 async function saveTemplate() {
-    if (!templateName.value.trim()) {
-        alert("Please enter a template name");
-        return;
+  if (!templateName.value.trim()) {
+    toastMsg('Please enter a template name');
+    return;
+  }
+  saving.value = true;
+  try {
+    const lw = layout.width;
+    const lh = layout.height;
+    const stageW = 820;
+    const stageH = 580;
+    const useScale = lw !== stageW || lh !== stageH;
+    const elScaleX = lw / stageW;
+    const elScaleY = lh / stageH;
+
+    const savedElements = elements.value.map(el => {
+      const old = edElToOld(el);
+      if (useScale) {
+        old.x = Math.round(el.x * elScaleX);
+        old.y = Math.round(el.y * elScaleY);
+        old.width = Math.round(el.w * elScaleX);
+        old.height = Math.round(el.h * elScaleY);
+      }
+      return old;
+    });
+
+    const payload = {
+      name: templateName.value,
+      layout: {
+        width: lw,
+        height: lh,
+        background: layout.background,
+        backgroundColor: layout.backgroundColor,
+        elements: savedElements,
+      },
+    };
+
+    if (isNew.value) {
+      const result: any = await $fetch('/api/templates', { method: 'POST', body: payload });
+      if (result?.id) {
+        router.replace(`/templates/${result.id}`);
+        toastMsg('Template saved');
+      }
+    } else {
+      await $fetch(`/api/templates/${templateId.value}`, { method: 'PUT', body: payload });
+      toastMsg('Template saved');
     }
-
-    saving.value = true;
-    try {
-        const payload = {
-            name: templateName.value,
-            layout,
-        };
-
-        if (isNew.value) {
-            await $fetch("/api/templates", { method: "POST", body: payload });
-        } else {
-            await $fetch(`/api/templates/${templateId.value}`, {
-                method: "PUT",
-                body: payload,
-            });
-        }
-
-        // Clear unsaved changes flag after successful save
-        hasUnsavedChanges.value = false
-        initialState.value = JSON.stringify({
-            name: templateName.value,
-            layout: JSON.parse(JSON.stringify(layout))
-        })
-
-        router.push("/templates");
-    } catch (e) {
-        alert("Failed to save template: " + (e as Error).message);
-    } finally {
-        saving.value = false;
-    }
+  } catch (e) {
+    toastMsg('Failed to save: ' + (e as Error).message);
+  } finally {
+    saving.value = false;
+  }
 }
+
+function generatePdfs() {
+  toastMsg(`Generating ${records.length} PDFs — demo mode`);
+}
+
+function handleCsvUpload(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  csvFile.value = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const text = ev.target?.result as string;
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return;
+
+    // auto-detect delimiter
+    const sep = text.includes('\t') ? '\t' : text.includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+
+    csvColumns.value = headers;
+
+    const rows = lines.slice(1).map(line => {
+      const vals = line.split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
+      const obj: Record<string, string> = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    });
+
+    records.value = rows;
+    recordIndex.value = 0;
+    toastMsg(`Loaded ${rows.length} records from ${file.name}`);
+  };
+  reader.readAsText(file);
+}
+
+// ── Context menu (legacy compat) ──
+const contextMenu = ref({ visible: false, x: 0, y: 0 });
 </script>
 
 <style scoped>
-.slide-enter-active,
-.slide-leave-active {
-    transition:
-        transform 0.3s ease,
-        opacity 0.3s ease;
+/* ── Design tokens ── */
+#ed-root {
+  --accent: #F5521E;
+  --ink: #14110E;
+  --muted: #6E665E;
+  --panel: #FBF9F7;
+  --line: rgba(20,17,14,0.09);
+  --bg: #E9E2DB;
+  height: 100vh; display: flex; flex-direction: column;
+  background: var(--bg); font-family: 'General Sans', system-ui, sans-serif;
+  color: var(--ink); -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+#ed-root ::selection { background: #F5521E; color: #fff; }
+
+/* ── TOP BAR ── */
+.ed-header {
+  flex: 0 0 auto; height: 58px; background: #fff;
+  border-bottom: 1px solid var(--line); display: flex;
+  align-items: center; padding: 0 14px; gap: 14px; z-index: 30;
+}
+.ed-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
+.brand-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--ink); }
+.ed-divider-v { width: 1px; height: 24px; background: var(--line); }
+.ed-title-area { display: flex; flex-direction: column; }
+.ed-title-input {
+  border: none; background: transparent; font-family: inherit;
+  font-size: 14px; font-weight: 600; color: var(--ink);
+  outline: none; padding: 0; width: 220px;
+  border-bottom: 1px dashed transparent; transition: border-color .15s;
+}
+.ed-title-input:focus { border-bottom-color: var(--accent); }
+.ed-title-input::placeholder { color: var(--muted); }
+.ed-save-status { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #1Fae6b; }
+.ed-undo-group { display: flex; align-items: center; gap: 2px; margin-left: 14px; }
+.ed-icon-btn {
+  border: none; background: transparent; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 9px; display: grid;
+  place-items: center; transition: background .15s; color: var(--ink);
+}
+.ed-header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.ed-plan-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 6px 8px 6px 13px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 500; color: var(--muted);
+}
+.plan-upgrade {
+  text-decoration: none; background: var(--ink); color: #fff;
+  font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
+}
+.ed-btn-outline {
+  border: 1px solid var(--line); background: #fff; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink);
+  padding: 9px 15px; border-radius: 9px; transition: background .15s;
+}
+.ed-btn-accent {
+  border: none; background: var(--accent); cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: #fff;
+  padding: 10px 17px; border-radius: 9px; display: flex;
+  align-items: center; gap: 8px;
+  box-shadow: 0 6px 16px rgba(245,82,30,0.32); transition: transform .2s;
+}
+.ed-btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
+.ed-btn-accent.full { width: 100%; justify-content: center; margin-top: 18px; padding: 14px; font-size: 14px; border-radius: 11px; }
+.ed-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #F5521E, #ff8a5b);
+  display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
 }
 
-.slide-enter-from {
-    transform: translateX(100%);
-    opacity: 0;
+/* ── BODY ── */
+.ed-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+
+/* ── LEFT PANEL ── */
+.ed-left-panel {
+  flex: 0 0 256px; background: var(--panel); border-right: 1px solid var(--line);
+  overflow-y: auto; padding: 18px 16px;
+}
+.ed-left-panel::-webkit-scrollbar { width: 9px; }
+.ed-left-panel::-webkit-scrollbar-thumb { background: rgba(20,17,14,0.16); border-radius: 9px; }
+.ed-left-panel::-webkit-scrollbar-track { background: transparent; }
+.ed-section-label {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ed-add-grid { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ed-add-card {
+  border: 1px solid var(--line); background: #fff; border-radius: 11px;
+  padding: 13px 10px; cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 9px; transition: border-color .2s, transform .15s, background .15s; color: var(--ink);
+}
+.ed-add-card:hover { border-color: rgba(20,17,14,0.22); transform: translateY(-1px); }
+.ed-add-card.active { border-color: var(--accent); background: rgba(245,82,30,0.04); }
+.ed-bg-picker { margin-top: 12px; display: flex; gap: 9px; }
+.ed-bg-thumb {
+  flex: 1; aspect-ratio: 1.3; border-radius: 10px;
+  border: 2px solid var(--line); background: #fff; cursor: pointer; position: relative;
+}
+.ed-bg-thumb.active { border-color: var(--accent); background: linear-gradient(160deg, #fff, #f0e9e2); }
+.ed-bg-thumb.add { border-style: dashed; display: grid; place-items: center; color: var(--muted); }
+.bg-check {
+  position: absolute; right: 5px; top: 5px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--accent); display: grid; place-items: center;
+}
+.ed-bg-hint { margin-top: 9px; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.ed-bg-hint a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.ed-bg-color-row {
+  margin-top: 10px; display: flex; align-items: center; gap: 10px;
+  background: #fff; border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 12px;
+}
+.ed-bg-color-pick {
+  width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); padding: 2px;
+}
+.ed-bg-color-label { font-size: 12.5px; font-weight: 500; color: var(--ink); }
+
+/* sub-panels */
+.ed-sub-panel {
+  margin-top: 12px; background: #fff; border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px;
+}
+.ed-sub-panel-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+.ed-sub-empty { font-size: 11.5px; color: var(--muted); text-align: center; padding: 16px 0; }
+.ed-asset-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.ed-asset-thumb {
+  aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line); cursor: pointer; background: var(--panel);
+  padding: 0; transition: border-color .15s;
+}
+.ed-asset-thumb:hover { border-color: var(--accent); }
+.ed-asset-thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+.ed-layers { margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
+.ed-layer-row {
+  display: flex; align-items: center; gap: 9px; padding: 7px 9px;
+  border-radius: 9px; cursor: pointer; border: 1px solid transparent;
+  transition: background .15s;
+}
+.ed-layer-row.active { background: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(20,17,14,0.06); }
+.ed-layer-row.hidden .layer-name { color: #A29A92; }
+.ed-layer-row.hidden .layer-dot { opacity: 0.3; }
+.layer-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 2px; }
+.layer-name { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layer-eye {
+  width: 24px; height: 24px; display: grid; place-items: center;
+  border-radius: 6px; cursor: pointer; opacity: 0.6; color: var(--muted);
 }
 
-.slide-leave-to {
-    transform: translateX(100%);
-    opacity: 0;
+/* ── CANVAS ── */
+.ed-canvas {
+  flex: 1; min-width: 0; position: relative; display: flex;
+  align-items: center; justify-content: center; overflow: auto;
+  background: radial-gradient(rgba(20,17,14,0.05) 1px, transparent 1px);
+  background-size: 22px 22px; background-color: var(--bg);
+}
+.canvas-wrapper { position: relative; }
+.canvas-label {
+  position: absolute; top: -26px; left: 0;
+  font-size: 11.5px; font-weight: 500; color: var(--muted);
+}
+.canvas-stage {
+  position: relative; transform-origin: center center; overflow: hidden;
+}
+.canvas-paper {
+  position: absolute; inset: 0; background: #fff; border-radius: 6px;
+  box-shadow: 0 30px 70px rgba(20,17,14,0.22), 0 6px 16px rgba(20,17,14,0.10);
+}
+.canvas-bg-img { width: 100%; height: 100%; object-fit: contain; }
+.canvas-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background-image:
+    linear-gradient(rgba(20,17,14,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,17,14,0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-.modal-enter-active {
-    transition: opacity 0.2s ease-out;
+/* canvas elements */
+.canvas-el { position: absolute; }
+.el-seal { width: 100%; height: 100%; display: grid; place-items: center; }
+.el-bar { width: 100%; height: 100%; }
+.el-image, .el-shape { width: 100%; height: 100%; }
+
+/* selection overlay */
+.sel-overlay {
+  position: absolute; border: 1.5px solid #F5521E; border-radius: 3px;
+  pointer-events: none; z-index: 5;
 }
-.modal-leave-active {
-    transition: opacity 0.15s ease-in;
+.sel-corner {
+  position: absolute; width: 11px; height: 11px; border-radius: 3px;
+  background: #fff; border: 1.5px solid #F5521E;
 }
-.modal-enter-from,
-.modal-leave-to {
-    opacity: 0;
+.sel-corner.tl { top: -7px; left: -7px; }
+.sel-corner.tr { top: -7px; right: -7px; }
+.sel-corner.bl { bottom: -7px; left: -7px; }
+.sel-corner.br { bottom: -7px; right: -7px; }
+.sel-toolbar {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 2px; background: var(--ink); padding: 5px;
+  border-radius: 9px; box-shadow: 0 6px 18px rgba(20,17,14,0.3);
+  pointer-events: auto; white-space: nowrap;
+}
+.sel-tool-btn {
+  width: 28px; height: 28px; display: grid; place-items: center;
+  border-radius: 6px; cursor: pointer; border: none; background: transparent;
+  color: #fff;
+}
+.sel-tool-btn:hover { background: rgba(255,255,255,0.15); }
+
+/* floating bar */
+.ed-float-bar {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px; background: #fff;
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px;
+  box-shadow: 0 10px 30px rgba(20,17,14,0.12); z-index: 10;
+}
+.float-btn {
+  border: none; background: transparent; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 50%; display: grid;
+  place-items: center; color: var(--ink);
+}
+.float-btn.active { background: var(--ink); color: #fff; }
+.float-label { font-size: 13px; font-weight: 600; min-width: 46px; text-align: center; }
+.float-label.wide { min-width: 96px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.float-divider { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+
+/* ── RIGHT PANEL ── */
+.ed-right-panel {
+  flex: 0 0 308px; background: var(--panel); border-left: 1px solid var(--line);
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.ed-right-panel::-webkit-scrollbar { width: 9px; }
+.ed-right-panel::-webkit-scrollbar-thumb { background: rgba(20,17,14,0.16); border-radius: 9px; }
+.ed-right-panel::-webkit-scrollbar-track { background: transparent; }
+.ed-right-tabs {
+  display: flex; padding: 14px 16px 0; gap: 4px;
+  position: sticky; top: 0; background: var(--panel); z-index: 2;
+}
+.ed-tab {
+  flex: 1; border: none; cursor: pointer; font-family: inherit;
+  font-size: 13.5px; font-weight: 600; padding: 9px;
+  border-radius: 9px 9px 0 0; background: transparent; color: var(--muted);
+}
+.ed-tab.active { color: var(--ink); border-bottom: 2px solid var(--accent); }
+.ed-tab-content { padding: 16px; }
+
+/* properties */
+.ed-prop-header {
+  display: flex; align-items: center; gap: 9px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.prop-icon {
+  display: grid; place-items: center; width: 30px; height: 30px;
+  border-radius: 8px; background: #fff; border: 1px solid var(--line);
+}
+.prop-text-icon { font-weight: 700; font-size: 15px; }
+.prop-bar-icon { width: 14px; height: 4px; background: var(--accent); border-radius: 2px; }
+.prop-name { font-size: 14px; font-weight: 600; }
+.prop-kind { font-size: 11.5px; color: var(--muted); }
+.ed-prop-section { margin-top: 16px; }
+.prop-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+.prop-label-sm { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.prop-hint { margin-top: 7px; font-size: 11.5px; color: var(--muted); }
+.ed-field-bound {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 12px; font-size: 13px;
+}
+.ed-field-bound svg { flex-shrink: 0; }
+.ed-field-select {
+  border: none; background: var(--cream); font-family: inherit;
+  font-size: 13px; font-weight: 600; color: var(--accent);
+  padding: 4px 8px; border-radius: 6px; cursor: pointer; outline: none;
+}
+.ed-textarea {
+  width: 100%; border: 1px solid var(--line); border-radius: 9px;
+  padding: 10px 12px; font-family: inherit; font-size: 13.5px;
+  resize: vertical; outline: none; color: var(--ink); background: #fff;
+}
+.ed-select {
+  width: 100%; border: 1px solid var(--line); border-radius: 9px;
+  padding: 10px 12px; font-family: inherit; font-size: 13.5px;
+  background: #fff; outline: none; cursor: pointer; color: var(--ink);
+}
+.ed-select.sm { padding: 8px 10px; font-size: 13px; }
+.ed-locked-btn {
+  margin-top: 8px; width: 100%; border: 1px dashed var(--line);
+  background: #fff; border-radius: 9px; padding: 9px 12px;
+  font-family: inherit; font-size: 12.5px; color: var(--muted);
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 7px;
+}
+.pro-tag { background: var(--ink); color: #fff; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 5px; }
+.ed-prop-row { display: flex; gap: 8px; margin-top: 10px; }
+.ed-prop-col { flex: 1; }
+.ed-range-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--line); border-radius: 9px;
+  padding: 7px 11px;
+}
+.ed-range-row input[type="range"] { flex: 1; }
+.range-val { font-size: 12.5px; font-weight: 600; min-width: 26px; text-align: right; }
+.ed-align-group { display: flex; background: #fff; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.align-btn {
+  border: none; cursor: pointer; width: 34px; height: 34px;
+  display: grid; place-items: center; background: #fff; color: var(--ink);
+}
+.align-btn.active { background: var(--ink); color: #fff; }
+.ed-swatches { display: flex; gap: 9px; align-items: center; }
+.swatch {
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(20,17,14,0.12);
+}
+.swatch.active { border-color: var(--ink); border-width: 2.5px; }
+.swatch-picker {
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer; border: 1px solid var(--line);
+  padding: 2px; background: #fff;
 }
 
-.modal-enter-active > div {
-    transition: transform 0.25s var(--ease-spring), opacity 0.2s ease-out;
+/* empty state */
+.ed-empty-state { text-align: center; padding: 48px 12px; color: var(--muted); }
+.empty-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: #fff; border: 1px solid var(--line);
+  display: grid; place-items: center; margin: 0 auto 14px; color: var(--muted);
 }
-.modal-leave-active > div {
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+.empty-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.empty-text { font-size: 13px; margin-top: 5px; line-height: 1.5; }
+
+/* data tab */
+.ed-data-header { display: flex; align-items: center; justify-content: space-between; }
+.data-title { font-size: 14px; font-weight: 600; }
+.data-meta { font-size: 11.5px; color: var(--muted); }
+.ed-btn-sm-outline {
+  border: 1px solid var(--line); background: #fff; border-radius: 8px;
+  padding: 7px 11px; font-family: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--ink);
 }
-.modal-enter-from > div {
-    transform: scale(0.95) translateY(8px);
-    opacity: 0;
+.ed-upload-btn { position: relative; overflow: hidden; }
+.ed-file-hidden {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
 }
-.modal-leave-to > div {
-    transform: scale(0.95) translateY(8px);
-    opacity: 0;
+.ed-mappings { margin-top: 9px; display: flex; flex-direction: column; gap: 7px; }
+.ed-map-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--line); border-radius: 9px;
+  padding: 9px 11px; font-size: 12.5px;
 }
+.map-col {
+  background: #F2ECE7; border-radius: 6px; padding: 3px 7px;
+  font-weight: 600; font-family: 'Inter', monospace;
+}
+.map-field { font-weight: 500; color: var(--accent); }
+.ed-data-rec-header { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; }
+.data-tap-hint { font-size: 11.5px; color: var(--muted); }
+.ed-records { margin-top: 9px; display: flex; flex-direction: column; gap: 4px; }
+.ed-record-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 9px; cursor: pointer;
+  border: 1px solid transparent;
+}
+.ed-record-row.active { background: #fff; border-color: var(--accent); }
+.rec-num { width: 22px; font-size: 11px; color: var(--muted); }
+.rec-info { flex: 1; min-width: 0; }
+.rec-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-course { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.data-watermark-note { margin-top: 9px; text-align: center; font-size: 11.5px; color: var(--muted); }
+
+/* range inputs (scoped) */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; height: 4px;
+  border-radius: 4px; background: rgba(20,17,14,0.12); outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 15px; height: 15px;
+  border-radius: 50%; background: #14110E; cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+
+/* toast */
+.ed-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-size: 13px; font-weight: 500;
+  padding: 12px 18px; border-radius: 11px;
+  box-shadow: 0 12px 34px rgba(20,17,14,0.35); z-index: 80;
+  display: flex; align-items: center; gap: 9px;
+}
+.toast-enter-active { transition: opacity .3s, transform .3s; }
+.toast-leave-active { transition: opacity .2s, transform .2s; }
+.toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+.toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(10px); }
 </style>
