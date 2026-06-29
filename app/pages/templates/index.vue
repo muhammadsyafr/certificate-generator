@@ -34,7 +34,6 @@
                 <NuxtLink to="/templates/assets" class="tp-tab"
                     >Assets</NuxtLink
                 >
-                <NuxtLink to="/templates/fonts" class="tp-tab">Fonts</NuxtLink>
             </nav>
 
             <div class="tp-topbar-actions">
