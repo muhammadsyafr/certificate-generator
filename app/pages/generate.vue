@@ -61,11 +61,7 @@
                 class="inline-flex items-center"
                 style="margin-top: var(--space-3); color: var(--color-primary); font-weight: var(--weight-medium); font-size: var(--text-sm); gap: var(--space-2); transition: color var(--duration-fast) var(--ease-standard);"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
+                <BaseIcon name="download" :size="16" />
                 Download example CSV
               </a>
             </div>
@@ -188,12 +184,7 @@
               class="btn-primary btn-lg"
               style="width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-2);"
             >
-              <svg v-if="!generating" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="16 16 12 12 8 16"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                <polyline points="16 16 12 12 8 16"/>
-              </svg>
+              <BaseIcon v-if="!generating" name="generate" :size="18" />
               {{ generating ? `Generating... (${progress}/${data.length})` : 'Generate All' }}
             </button>
 

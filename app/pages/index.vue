@@ -89,10 +89,7 @@
             <div class="cert-card">
               <div class="cert-inner">
                 <div class="cert-badge">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="9.5" r="5" stroke="#F5521E" stroke-width="2"/>
-                    <path d="M9 14l-2 7 5-3 5 3-2-7" stroke="#14110E" stroke-width="2" stroke-linejoin="round"/>
-                  </svg>
+                  <BaseIcon name="seal" :size="48" />
                   <span class="cert-badge-seal" data-float-seal></span>
                 </div>
                 <div class="cert-type">Certificate of Achievement</div>
@@ -166,9 +163,7 @@
         <div class="how-card" data-reveal data-delay="0">
           <div class="how-card-header">
             <span class="how-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M4 20l3.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20z" stroke="#14110E" stroke-width="1.8" stroke-linejoin="round"/>
-              </svg>
+              <BaseIcon name="template" :size="48" />
             </span>
             <span class="how-number">01</span>
           </div>
@@ -178,9 +173,7 @@
         <div class="how-card" data-reveal data-delay="90">
           <div class="how-card-header">
             <span class="how-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M4 7h16M4 12h16M4 17h10" stroke="#14110E" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
+              <BaseIcon name="csv" :size="48" />
             </span>
             <span class="how-number">02</span>
           </div>
@@ -190,9 +183,7 @@
         <div class="how-card how-card-dark" data-reveal data-delay="180">
           <div class="how-card-header">
             <span class="how-icon how-icon-light">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#F5521E" stroke-width="1.8" stroke-linejoin="round"/>
-              </svg>
+              <BaseIcon name="generate" :size="48" />
             </span>
             <span class="how-number how-number-light">03</span>
           </div>
@@ -214,9 +205,7 @@
       <div class="features-grid">
         <div class="feature-card feature-card-big" data-reveal>
           <span class="feature-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M4 20l3.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20z" stroke="#F5521E" stroke-width="1.8" stroke-linejoin="round"/>
-            </svg>
+            <BaseIcon name="template" :size="48" />
           </span>
           <h3 class="feature-title">Drag-and-drop canvas</h3>
           <p class="feature-text">Place every element exactly where you want it. Live guides, snapping, layers and instant preview of real data.</p>
@@ -236,19 +225,14 @@
         </div>
         <div class="feature-card" data-reveal data-delay="80">
           <span class="feature-icon">
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
-              <path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#F5521E" stroke-width="1.8" stroke-linejoin="round"/>
-            </svg>
+            <BaseIcon name="generate" :size="48" />
           </span>
           <h3 class="feature-title-sm">Bulk from CSV</h3>
           <p class="feature-text-sm">One template, thousands of personalized PDFs. Mapped from your spreadsheet automatically.</p>
         </div>
         <div class="feature-card" data-reveal data-delay="160">
           <span class="feature-icon">
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
-              <path d="M7 3h7l4 4v14H7z" stroke="#F5521E" stroke-width="1.8" stroke-linejoin="round"/>
-              <path d="M12 11v6m0 0l-2.5-2.5M12 17l2.5-2.5" stroke="#F5521E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <BaseIcon name="download" :size="48" />
           </span>
           <h3 class="feature-title-sm">Print-ready PDF</h3>
           <p class="feature-text-sm">Crisp vector text and embedded fonts at true print resolution. Download as a zip.</p>

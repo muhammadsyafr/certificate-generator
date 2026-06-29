@@ -15,11 +15,7 @@
             <p class="text-body" style="color: var(--color-text-secondary);">Upload custom fonts to use in your certificate templates</p>
           </div>
           <button @click="showUploadForm = !showUploadForm" class="btn-primary" style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
+            <BaseIcon name="upload" :size="18" />
             Upload Font
           </button>
         </div>
@@ -30,11 +26,7 @@
         <div class="flex items-center justify-between" style="margin-bottom: var(--space-6);">
           <div class="flex items-center" style="gap: var(--space-4);">
             <div style="width: 48px; height: 48px; border-radius: var(--radius-xl); background: var(--color-accent-muted); display: flex; align-items: center; justify-content: center;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 7 4 4 20 4 20 7"/>
-                <line x1="9" y1="20" x2="15" y2="20"/>
-                <line x1="12" y1="4" x2="12" y2="20"/>
-              </svg>
+              <BaseIcon name="font" :size="20" />
             </div>
             <h2 class="text-heading-sm">Upload New Font</h2>
           </div>

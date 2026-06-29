@@ -16,6 +16,8 @@ export function useHoverIntents() {
   }
   function ghostIn(e: MouseEvent) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.2)' }
   function ghostOut(e: MouseEvent) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }
+  function delHoverIn(e: MouseEvent) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,53,69,0.07)' }
+  function delHoverOut(e: MouseEvent) { (e.currentTarget as HTMLElement).style.background = 'transparent' }
 
-  return { softIn, softOut, whiteOut, ctaIn, ctaOut, cardIn, cardOut, ghostIn, ghostOut }
+  return { softIn, softOut, whiteOut, ctaIn, ctaOut, cardIn, cardOut, ghostIn, ghostOut, delHoverIn, delHoverOut }
 }
