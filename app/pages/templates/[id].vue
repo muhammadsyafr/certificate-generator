@@ -164,17 +164,36 @@
               </svg>
             </span>
           </button>
-          <button v-if="backgroundThumbs.length === 0" class="ed-bg-thumb active">
+          <button v-if="backgroundThumbs.length === 0" class="ed-bg-thumb active" @click="layout.background = ''">
             <span class="bg-check">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
                 <path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
           </button>
-          <button class="ed-bg-thumb add" @click="layout.background = ''">
+          <button class="ed-bg-thumb add" @click="layout.background = ''; selectedBorderId = null">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
+          </button>
+        </div>
+
+        <div class="ed-section-label" style="margin-top:16px">Preset Borders</div>
+        <div class="ed-bg-picker">
+          <button
+            v-for="border in presetBorders"
+            :key="border.id"
+            class="ed-bg-thumb ed-bg-thumb--border"
+            :class="{ active: selectedBorderId === border.id }"
+            @click="applyPresetBorder(border)"
+            :style="{ background: border.bg, backgroundSize: 'cover' }"
+          >
+            <div v-html="border.preview" class="ed-border-preview"></div>
+            <span v-if="selectedBorderId === border.id" class="bg-check">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
           </button>
         </div>
         <div class="ed-bg-color-row">
@@ -659,6 +678,50 @@ const sizePresets = [
 const canvasSize = ref('a4-landscape');
 const customW = ref(842);
 const customH = ref(595);
+
+const selectedBorderId = ref<string | null>(null);
+
+const presetBorders = [
+  {
+    id: 'none', bg: '#fff',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#f5f5f5"/><line x1="6" y1="20" x2="34" y2="20" stroke="#ccc" stroke-width="1.2" stroke-dasharray="2 2"/></svg>',
+    svg: (w: number, h: number) => '',
+  },
+  {
+    id: 'simple', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="4" y="4" width="32" height="32" rx="2" stroke="#14110E" stroke-width="1.5"/></svg>',
+    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="4" fill="none" stroke="#14110E" stroke-width="2"/></svg>`,
+  },
+  {
+    id: 'double', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="3" y="3" width="34" height="34" rx="1" stroke="#14110E" stroke-width="1"/><rect x="6" y="6" width="28" height="28" rx="1" stroke="#14110E" stroke-width="0.8"/></svg>',
+    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="10" y="10" width="${w-20}" height="${h-20}" rx="4" fill="none" stroke="#14110E" stroke-width="2"/><rect x="18" y="18" width="${w-36}" height="${h-36}" rx="2" fill="none" stroke="#14110E" stroke-width="1"/></svg>`,
+  },
+  {
+    id: 'ornate', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="3" y="3" width="34" height="34" rx="2" stroke="#14110E" stroke-width="1"/><circle cx="6" cy="6" r="1.5" fill="#14110E"/><circle cx="34" cy="6" r="1.5" fill="#14110E"/><circle cx="6" cy="34" r="1.5" fill="#14110E"/><circle cx="34" cy="34" r="1.5" fill="#14110E"/></svg>',
+    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="6" fill="none" stroke="#14110E" stroke-width="1.8"/><circle cx="24" cy="24" r="5" fill="#14110E"/><circle cx="${w-24}" cy="24" r="5" fill="#14110E"/><circle cx="24" cy="${h-24}" r="5" fill="#14110E"/><circle cx="${w-24}" cy="${h-24}" r="5" fill="#14110E"/></svg>`,
+  },
+  {
+    id: 'minimal', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><line x1="4" y1="4" x2="12" y2="4" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="4" x2="4" y2="12" stroke="#14110E" stroke-width="1.5"/><line x1="28" y1="4" x2="36" y2="4" stroke="#14110E" stroke-width="1.5"/><line x1="36" y1="4" x2="36" y2="12" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="28" x2="4" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="36" x2="12" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="28" y1="36" x2="36" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="36" y1="28" x2="36" y2="36" stroke="#14110E" stroke-width="1.5"/></svg>',
+    svg: (w: number, h: number) => {
+      const l = 16, s = 40;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><line x1="${l}" y1="${l}" x2="${s}" y2="${l}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${l}" x2="${l}" y2="${s}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-s}" y2="${l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-l}" y2="${s}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${l}" y2="${h-s}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${s}" y2="${h-l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-s}" y2="${h-l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-l}" y2="${h-s}" stroke="#14110E" stroke-width="2"/></svg>`;
+    },
+  },
+];
+
+function applyPresetBorder(border: typeof presetBorders[0]) {
+  if (border.id === 'none') {
+    layout.background = '';
+    selectedBorderId.value = null;
+    return;
+  }
+  const svg = border.svg(layout.width, layout.height);
+  layout.background = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  selectedBorderId.value = border.id;
+}
 
 function setCanvasSize(key: string, w: number, h: number) {
   canvasSize.value = key;
@@ -1403,6 +1466,9 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 }
 .ed-bg-thumb.active { border-color: var(--accent); background: linear-gradient(160deg, #fff, #f0e9e2); }
 .ed-bg-thumb.add { border-style: dashed; display: grid; place-items: center; color: var(--muted); }
+.ed-bg-thumb--border { background: #FFFDF9 !important; }
+.ed-border-preview { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.ed-border-preview :deep(svg) { width: 100%; height: 100%; }
 .bg-check {
   position: absolute; right: 5px; top: 5px; width: 16px; height: 16px;
   border-radius: 50%; background: var(--accent); display: grid; place-items: center;
