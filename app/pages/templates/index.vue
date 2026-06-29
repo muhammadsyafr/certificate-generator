@@ -47,6 +47,7 @@
                     @click="createNew"
                     @mouseenter="CTA_IN"
                     @mouseleave="CTA_OUT"
+                    title="Create new template"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <path
@@ -116,7 +117,7 @@
                 <div class="tp-empty-desc">
                     Create your first certificate template to get started.
                 </div>
-                <button class="tp-btn-cta" @click="createNew">
+                <button class="tp-btn-cta" @click="createNew" title="Create your first template">
                     Create your first template
                 </button>
             </div>

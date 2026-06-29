@@ -626,9 +626,11 @@ onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
 
 /* top bar */
 .al-topbar {
-  flex: 0 0 auto; height: 58px; background: #fff;
+  position: sticky; top: 0; flex: 0 0 auto; height: 58px;
+  background: rgba(255,255,255,0.86); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--al-line);
-  display: flex; align-items: center; padding: 0 20px; gap: 14px; z-index: 20;
+  display: flex; align-items: center; padding: 0 28px; gap: 16px; z-index: 30;
 }
 .al-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--al-ink); }
 .al-logo-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--al-ink); }

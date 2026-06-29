@@ -153,6 +153,7 @@
             :class="{ 'gr-generate-btn--done': generationDone }"
             :disabled="!selectedTemplateId || data.length === 0 || generating"
             @click="generateBulk"
+            title="Start bulk generation"
           >
             <svg v-if="!generating && !generationDone" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/></svg>
             <svg v-if="generationDone" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>

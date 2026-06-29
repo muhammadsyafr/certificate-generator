@@ -11,6 +11,9 @@
         </span>
       </a>
       <div class="ed-divider-v"></div>
+      <NuxtLink to="/templates" class="ed-back-btn" @mouseenter="softIn" @mouseleave="softOut" title="Back to templates">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </NuxtLink>
       <div class="ed-title-area">
         <input
           v-model="templateName"
@@ -44,7 +47,7 @@
             </svg>
           </button>
         </div>
-        <button class="ed-btn-outline" @mouseenter="softIn" @mouseleave="whiteOut" @click="previewing = !previewing">
+        <button class="ed-btn-outline" @mouseenter="softIn" @mouseleave="whiteOut" @click="previewing = !previewing" title="Toggle preview mode">
           {{ previewing ? 'Edit' : 'Preview' }}
         </button>
         <button
@@ -54,6 +57,7 @@
           @mouseleave="whiteOut"
           @click="saveTemplate"
           style="margin-right:-4px"
+          title="Save template Ctrl+S"
         >
           {{ saving ? 'Saving...' : 'Save' }}
         </button>
@@ -63,6 +67,7 @@
           @mouseenter="ctaIn"
           @mouseleave="ctaOut"
           @click="generatePdfs"
+          title="Generate PDFs from data"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/>
@@ -83,6 +88,7 @@
             class="ed-add-card"
             @mouseenter="cardIn" @mouseleave="cardOut"
             @click="addTextElement()"
+            title="Add text block"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M5 6h14M9 6v13M5 6v-1M19 6v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -94,6 +100,7 @@
             :class="{ active: showImagePanel }"
             @mouseenter="cardIn" @mouseleave="cardOut"
             @click="showImagePanel = !showImagePanel; showIconPanel = false"
+            title="Add image from library"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -105,6 +112,7 @@
             class="ed-add-card"
             @mouseenter="cardIn" @mouseleave="cardOut"
             @click="addElement('sig')"
+            title="Add signature"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M3 18c4 0 5-12 8-12s2 8 4 8 2-3 5-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -115,6 +123,7 @@
             class="ed-add-card"
             @mouseenter="cardIn" @mouseleave="cardOut"
             @click="addElement('shape')"
+            title="Add divider bar"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
@@ -262,13 +271,13 @@
               <span class="sel-handle sel-s"  @pointerdown.stop="startResize(selectedEl.id, 's',  $event)"></span>
               <span class="sel-handle sel-se" @pointerdown.stop="startResize(selectedEl.id, 'se', $event)"></span>
               <div class="sel-toolbar">
-                <button @click="duplicateElement" class="sel-tool-btn">
+                <button @click="duplicateElement" class="sel-tool-btn" title="Duplicate element">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/>
                     <path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="1.8"/>
                   </svg>
                 </button>
-                <button @click="deleteElement" class="sel-tool-btn">
+                <button @click="deleteElement" class="sel-tool-btn" title="Delete element">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path d="M5 7h14M10 7V5h4v2M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -280,11 +289,11 @@
 
         <!-- floating bottom bar -->
         <div class="ed-float-bar">
-          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomOut">
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomOut" title="Zoom out">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
           <span class="float-label">{{ Math.round(zoom * 100) }}%</span>
-          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomIn">
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="zoomIn" title="Zoom in">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
           <div class="float-divider"></div>
@@ -292,11 +301,11 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 3v18M21 3v18M3 9h18M3 15h18M9 3v18M15 3v18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </button>
           <div class="float-divider"></div>
-          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="prevRec">
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="prevRec" title="Previous record">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <span class="float-label wide">Record {{ recordIndex + 1 }} of {{ records.length }}</span>
-          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="nextRec">
+          <button class="float-btn" @mouseenter="softIn" @mouseleave="softOut" @click="nextRec" title="Next record">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
@@ -1257,6 +1266,12 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .ed-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
 .brand-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--ink); }
 .ed-divider-v { width: 1px; height: 24px; background: var(--line); }
+.ed-back-btn {
+  display: grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 8px; color: var(--muted); text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.ed-back-btn:hover { color: var(--ink); }
 .ed-title-area { display: flex; flex-direction: column; }
 .ed-title-input {
   border: none; background: transparent; font-family: inherit;
