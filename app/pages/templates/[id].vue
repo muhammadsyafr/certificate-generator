@@ -217,7 +217,7 @@
       <!-- CANVAS -->
       <main class="ed-canvas" @click.self="deselect">
         <div class="canvas-wrapper">
-          <div class="canvas-label">A4 landscape · 297 × 210 mm</div>
+          <div class="canvas-label">{{ canvasSizeLabel }}</div>
           <div
             ref="stageEl"
             class="canvas-stage"
@@ -460,7 +460,23 @@
           </template>
 
           <div v-else class="ed-empty-state">
-            <div class="empty-icon">
+            <div class="ed-prop-section" style="margin-bottom:24px">
+              <div class="prop-label">Canvas Size</div>
+              <div class="ed-size-presets">
+                <button
+                  v-for="s in sizePresets"
+                  :key="s.key"
+                  class="ed-size-btn"
+                  :class="{ active: canvasSize === s.key }"
+                  @click="setCanvasSize(s.key, s.w, s.h)"
+                >{{ s.label }}</button>
+              </div>
+              <div class="ed-size-custom" :class="{ visible: canvasSize === 'custom' }">
+                <input v-model.number="customW" type="number" class="ed-size-input" @change="applyCustomSize" /> ×
+                <input v-model.number="customH" type="number" class="ed-size-input" @change="applyCustomSize" /> px
+              </div>
+            </div>
+            <div class="empty-icon" style="margin-top:20px">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M5 3l14 9-6 1.5L11 20 5 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
               </svg>
@@ -626,11 +642,46 @@ interface Layout {
 }
 
 const layout = reactive<Layout>({
-  width: 820,
-  height: 580,
+  width: 842,
+  height: 595,
   background: '',
   backgroundColor: '#ffffff',
   elements: [],
+});
+
+const sizePresets = [
+  { key: 'a4-landscape', label: 'A4 Landscape', w: 842, h: 595 },
+  { key: 'a4-portrait', label: 'A4 Portrait', w: 595, h: 842 },
+  { key: 'letter-landscape', label: 'Letter Landscape', w: 792, h: 612 },
+  { key: 'letter-portrait', label: 'Letter Portrait', w: 612, h: 792 },
+  { key: 'custom', label: 'Custom', w: 0, h: 0 },
+];
+const canvasSize = ref('a4-landscape');
+const customW = ref(842);
+const customH = ref(595);
+
+function setCanvasSize(key: string, w: number, h: number) {
+  canvasSize.value = key;
+  if (key !== 'custom') {
+    layout.width = w;
+    layout.height = h;
+  } else {
+    customW.value = layout.width;
+    customH.value = layout.height;
+  }
+}
+
+function applyCustomSize() {
+  if (customW.value >= 200 && customH.value >= 200) {
+    layout.width = customW.value;
+    layout.height = customH.value;
+  }
+}
+
+const canvasSizeLabel = computed(() => {
+  const preset = sizePresets.find(s => s.key === canvasSize.value);
+  if (preset && preset.key !== 'custom') return `${preset.label} · ${layout.width} × ${layout.height} px`;
+  return `${layout.width} × ${layout.height} px`;
 });
 
 const defaultElements: EdElement[] = [
@@ -1576,8 +1627,17 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .swatch {
   width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
   border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(20,17,14,0.12);
+  position: relative;
 }
-.swatch.active { border-color: var(--ink); border-width: 2.5px; }
+.swatch.active {
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px #fff;
+  border-color: transparent;
+}
+.swatch.active::after {
+  content: ''; position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 12l4.5 4.5L19 7' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+}
 .swatch-picker {
   width: 34px; height: 34px; border-radius: 9px; cursor: pointer; border: 1px solid var(--line);
   padding: 2px; background: #fff;
@@ -1585,6 +1645,20 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 
 /* empty state */
 .ed-empty-state { text-align: center; padding: 48px 12px; color: var(--muted); }
+.ed-size-presets { display: flex; flex-direction: column; gap: 4px; margin-top: 18px; }
+.ed-size-btn {
+  border: 1px solid var(--line); background: #fff; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink);
+  padding: 10px 12px; border-radius: 9px; transition: all .15s; width: 100%; text-align: left;
+}
+.ed-size-btn:hover { background: rgba(20,17,14,0.03); border-color: rgba(20,17,14,0.18); }
+.ed-size-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+.ed-size-custom { display: none; margin-top: 10px; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.ed-size-custom.visible { display: flex; }
+.ed-size-input {
+  width: 80px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  font-family: inherit; font-size: 13px; text-align: center; outline: none; color: var(--ink);
+}
 .empty-icon {
   width: 52px; height: 52px; border-radius: 14px;
   background: #fff; border: 1px solid var(--line);

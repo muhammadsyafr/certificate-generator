@@ -187,8 +187,8 @@
 
                 <!-- right: certificate showcase -->
                 <div class="hero-right">
-                    <div class="cert-main" data-float ref="tiltEl">
-                        <div class="cert-card">
+        <div class="cert-main" data-float>
+            <div class="cert-card" ref="tiltEl">
                             <div class="cert-inner">
                                 <div class="cert-badge">
                                     <BaseIcon name="seal" :size="48" />

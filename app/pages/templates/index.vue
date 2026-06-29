@@ -1983,9 +1983,9 @@ onUnmounted(() => {
     transition: all 0.15s;
 }
 .tp-fmt-btn--active {
-    border: 2px solid var(--tp-accent);
+    border: 2px solid #F5521E;
     background: #fff4f0;
-    color: var(--tp-accent);
+    color: #F5521E;
 }
 .tp-modal-watermark {
     display: flex;
@@ -2000,7 +2000,7 @@ onUnmounted(() => {
     line-height: 1.45;
 }
 .tp-modal-watermark a {
-    color: var(--tp-accent);
+    color: #F5521E;
     font-weight: 600;
     text-decoration: none;
 }
@@ -2023,7 +2023,7 @@ onUnmounted(() => {
 .tp-modal-btn-run {
     flex: 2;
     border: none;
-    background: var(--tp-accent);
+    background: #F5521E;
     color: #fff;
     font-family: inherit;
     font-size: 14px;
