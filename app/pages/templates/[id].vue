@@ -741,6 +741,19 @@ function applyCustomSize() {
   }
 }
 
+function syncCanvasSize() {
+  const preset = sizePresets.find(s =>
+    s.key !== 'custom' && s.w === layout.width && s.h === layout.height
+  );
+  if (preset) {
+    canvasSize.value = preset.key;
+  } else {
+    canvasSize.value = 'custom';
+    customW.value = layout.width;
+    customH.value = layout.height;
+  }
+}
+
 const canvasSizeLabel = computed(() => {
   const preset = sizePresets.find(s => s.key === canvasSize.value);
   if (preset && preset.key !== 'custom') return `${preset.label} · ${layout.width} × ${layout.height} px`;
@@ -1224,15 +1237,16 @@ onMounted(async () => {
         templateName.value = data.name || '';
         const saved: Layout = data.layout ? (typeof data.layout === 'string' ? JSON.parse(data.layout) : data.layout) : null;
         if (saved) {
-          layout.width = saved.width || 820;
-          layout.height = saved.height || 580;
+          layout.width = saved.width || 842;
+          layout.height = saved.height || 595;
+          syncCanvasSize();
           layout.backgroundColor = saved.backgroundColor || '#ffffff';
           layout.background = saved.background || '';
           if (saved.elements && Array.isArray(saved.elements)) {
-            // calculate scale factor if saved layout dimensions differ from editor stage (820×580)
-            const sx = 820 / (saved.width || 820);
-            const sy = 580 / (saved.height || 580);
-            const useScale = saved.width !== 820 || saved.height !== 580;
+            // calculate scale factor if saved layout dimensions differ from editor stage (842×595)
+            const sx = 842 / (saved.width || 842);
+            const sy = 595 / (saved.height || 595);
+            const useScale = saved.width !== 842 || saved.height !== 595;
             elements.value = saved.elements.map((e: any, i: number) => {
               const el = oldElToEd(e, e.id || 'loaded_' + i);
               if (useScale) {
