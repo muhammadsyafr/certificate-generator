@@ -24,25 +24,25 @@
           {{ editingTitle ? 'Editing...' : 'All changes saved' }}
         </div>
       </div>
-      <div class="ed-undo-group">
-        <button class="ed-icon-btn" @mouseenter="softIn" @mouseleave="softOut" title="Undo">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-            <path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <button class="ed-icon-btn" @mouseenter="softIn" @mouseleave="softOut" title="Redo">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-            <path d="M15 7l5 5-5 5M20 12H9a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+      <div class="ed-plan-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v6m0 0l-2.5-2.5M12 8l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Free plan
+        <a href="/#pricing" class="plan-upgrade">Upgrade</a>
       </div>
       <div class="ed-header-right">
-        <div class="ed-plan-pill">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2v6m0 0l-2.5-2.5M12 8l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Free plan
-          <a href="/#pricing" class="plan-upgrade">Upgrade</a>
+        <div class="ed-undo-group">
+          <button class="ed-icon-btn" :class="{ 'ed-icon-btn--disabled': !canUndo }" :disabled="!canUndo" @click="undo" @mouseenter="softIn" @mouseleave="softOut" title="Undo Ctrl+Z">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="ed-icon-btn" :class="{ 'ed-icon-btn--disabled': !canRedo }" :disabled="!canRedo" @click="redo" @mouseenter="softIn" @mouseleave="softOut" title="Redo Ctrl+Shift+Z">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M15 7l5 5-5 5M20 12H9a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <button class="ed-btn-outline" @mouseenter="softIn" @mouseleave="whiteOut" @click="previewing = !previewing">
           {{ previewing ? 'Edit' : 'Preview' }}
@@ -219,6 +219,10 @@
             </div>
             <div v-if="showGrid" class="canvas-grid"></div>
 
+            <!-- center guides -->
+            <div v-if="showCenterGuides && !previewing" class="canvas-guide canvas-guide-h" :style="{ top: layout.height / 2 + 'px' }"></div>
+            <div v-if="showCenterGuides && !previewing" class="canvas-guide canvas-guide-v" :style="{ left: layout.width / 2 + 'px' }"></div>
+
             <!-- elements -->
             <div
               v-for="el in visibleElements"
@@ -248,11 +252,15 @@
             </div>
 
             <!-- selection overlay -->
-            <div v-if="!previewing && selectedEl" class="sel-overlay" :style="selBoxStyle">
-              <span class="sel-corner tl"></span>
-              <span class="sel-corner tr"></span>
-              <span class="sel-corner bl"></span>
-              <span class="sel-corner br"></span>
+            <div v-if="!previewing && selectedEl" class="sel-overlay" :style="selBoxStyle" @pointerdown.stop>
+              <span class="sel-handle sel-nw" @pointerdown.stop="startResize(selectedEl.id, 'nw', $event)"></span>
+              <span class="sel-handle sel-n"  @pointerdown.stop="startResize(selectedEl.id, 'n',  $event)"></span>
+              <span class="sel-handle sel-ne" @pointerdown.stop="startResize(selectedEl.id, 'ne', $event)"></span>
+              <span class="sel-handle sel-w"  @pointerdown.stop="startResize(selectedEl.id, 'w',  $event)"></span>
+              <span class="sel-handle sel-e"  @pointerdown.stop="startResize(selectedEl.id, 'e',  $event)"></span>
+              <span class="sel-handle sel-sw" @pointerdown.stop="startResize(selectedEl.id, 'sw', $event)"></span>
+              <span class="sel-handle sel-s"  @pointerdown.stop="startResize(selectedEl.id, 's',  $event)"></span>
+              <span class="sel-handle sel-se" @pointerdown.stop="startResize(selectedEl.id, 'se', $event)"></span>
               <div class="sel-toolbar">
                 <button @click="duplicateElement" class="sel-tool-btn">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -760,8 +768,8 @@ const selBoxStyle = computed(() => {
   const el = selectedEl.value;
   if (!el) return {};
   return {
-    left: (el.x - 6) + 'px',
-    top: (el.y - 6) + 'px',
+    left: (el.x - 6 + dragDelta.x) + 'px',
+    top: (el.y - 6 + dragDelta.y) + 'px',
     width: (el.w + 12) + 'px',
     height: (el.h + 12) + 'px',
   };
@@ -820,6 +828,7 @@ watch(elements, () => {
 });
 
 function addElement(kind: string) {
+  pushUndo();
   const id = 'el' + nextId++;
   const base = { x: 300, y: 250, w: 200, h: 40, color: '#14110E', opacity: 100 };
   let el: EdElement;
@@ -849,6 +858,7 @@ function patchSel(patch: Partial<EdElement>) {
   if (!currentId) return;
   const idx = elements.value.findIndex(e => e.id === currentId);
   if (idx === -1) return;
+  pushUndo();
   const updated = { ...elements.value[idx], ...patch };
   const newArr = [...elements.value];
   newArr[idx] = updated;
@@ -872,6 +882,7 @@ function patchFieldBinding(value: string) {
 function duplicateElement() {
   const el = selectedEl.value;
   if (!el) return;
+  pushUndo();
   const id = 'el' + nextId++;
   const dup: EdElement = { ...JSON.parse(JSON.stringify(el)), id, x: el.x + 20, y: el.y + 20 };
   elements.value = [...elements.value, dup];
@@ -881,12 +892,42 @@ function duplicateElement() {
 function deleteElement() {
   const id = selectedId.value;
   if (!id) return;
+  pushUndo();
   elements.value = elements.value.filter(e => e.id !== id);
   selectedId.value = null;
 }
 
 // ── Drag ──
 let dragState: { id: string; sx: number; sy: number; ox: number; oy: number; el: HTMLElement | null } | null = null;
+let resizeState: { id: string; dir: string; sx: number; sy: number; ox: number; oy: number; ow: number; oh: number } | null = null;
+const dragDelta = reactive({ x: 0, y: 0 });
+const showCenterGuides = ref(false);
+const shiftHeld = ref(false);
+const undoStack = ref<EdElement[][]>([]);
+const redoStack = ref<EdElement[][]>([]);
+const MAX_HISTORY = 50;
+
+function pushUndo() {
+  undoStack.value = [...undoStack.value.slice(-(MAX_HISTORY - 1)), JSON.parse(JSON.stringify(elements.value))];
+  redoStack.value = [];
+}
+
+function undo() {
+  if (!undoStack.value.length) return;
+  redoStack.value = [...redoStack.value, JSON.parse(JSON.stringify(elements.value))];
+  const prev = undoStack.value.pop()!;
+  elements.value = prev;
+}
+
+function redo() {
+  if (!redoStack.value.length) return;
+  undoStack.value = [...undoStack.value, JSON.parse(JSON.stringify(elements.value))];
+  const next = redoStack.value.pop()!;
+  elements.value = next;
+}
+
+const canUndo = computed(() => undoStack.value.length > 0);
+const canRedo = computed(() => redoStack.value.length > 0);
 
 function startDrag(id: string, e: PointerEvent) {
   e.stopPropagation();
@@ -904,33 +945,105 @@ function startDrag(id: string, e: PointerEvent) {
   dragState = { id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y, el: domEl };
 }
 
+function startResize(id: string, dir: string, e: PointerEvent) {
+  e.stopPropagation();
+  e.preventDefault();
+  const el = elements.value.find(x => x.id === id);
+  if (!el) return;
+  const domEl = (e.currentTarget as HTMLElement).closest('.canvas-el') as HTMLElement;
+  if (domEl) {
+    domEl.style.transition = 'none';
+    domEl.setPointerCapture(e.pointerId);
+  }
+  resizeState = { id, dir, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y, ow: el.w, oh: el.h };
+  document.body.style.cursor = getComputedStyle(e.currentTarget as HTMLElement).cursor;
+}
+
 function onPointerMove(e: PointerEvent) {
-  if (!dragState?.el) return;
   const z = zoom.value;
-  const dx = (e.clientX - dragState.sx) / z;
-  const dy = (e.clientY - dragState.sy) / z;
-  dragState.el.style.transform = `translate(${dx}px, ${dy}px)`;
+  if (dragState?.el) {
+    const dx = (e.clientX - dragState.sx) / z;
+    const dy = (e.clientY - dragState.sy) / z;
+    const cx = dragState.ox + dx;
+    const cy = dragState.oy + dy;
+    const el = elements.value.find(x => x.id === dragState!.id);
+    const snapThreshold = 5;
+    let snapX = cx, snapY = cy;
+    let showGuides = false;
+    if (el) {
+      const ecx = snapX + el.w / 2;
+      const ecy = snapY + el.h / 2;
+      const ccx = layout.width / 2;
+      const ccy = layout.height / 2;
+      if (Math.abs(ecx - ccx) < snapThreshold) { snapX = ccx - el.w / 2; showGuides = true; }
+      if (Math.abs(ecy - ccy) < snapThreshold) { snapY = ccy - el.h / 2; showGuides = true; }
+    }
+    const sdx = snapX - dragState.ox;
+    const sdy = snapY - dragState.oy;
+    dragState.el.style.transform = `translate(${sdx}px, ${sdy}px)`;
+    dragDelta.x = Math.round(sdx);
+    dragDelta.y = Math.round(sdy);
+    showCenterGuides.value = showGuides;
+    return;
+  }
+  if (resizeState) {
+    const dx = (e.clientX - resizeState.sx) / z;
+    const dy = (e.clientY - resizeState.sy) / z;
+    const { dir, ox, oy, ow, oh } = resizeState;
+    const ratio = ow / oh;
+    let nx = ox, ny = oy, nw = ow, nh = oh;
+    if (shiftHeld.value && dir.length === 2) {
+      // corner resize with proportional lock
+      const adx = Math.abs(dx); const ady = Math.abs(dy);
+      if (adx > ady || dir === 'nw' || dir === 'se') {
+        nw = Math.max(20, ow + dx * (dir.includes('e') ? 1 : -1));
+        nh = nw / ratio;
+      } else {
+        nh = Math.max(20, oh + dy * (dir.includes('s') ? 1 : -1));
+        nw = nh * ratio;
+      }
+      if (dir.includes('w')) nx = ox + ow - nw;
+      if (dir.includes('n')) ny = oy + oh - nh;
+    } else {
+      if (dir.includes('e')) nw = Math.max(20, ow + dx);
+      if (dir.includes('w')) { nw = Math.max(20, ow - dx); nx = ox + ow - nw; }
+      if (dir.includes('s')) nh = Math.max(20, oh + dy);
+      if (dir.includes('n')) { nh = Math.max(20, oh - dy); ny = oy + oh - nh; }
+    }
+    const idx = elements.value.findIndex(el => el.id === resizeState!.id);
+    if (idx !== -1) {
+      const updated = { ...elements.value[idx], x: Math.round(nx), y: Math.round(ny), w: Math.round(nw), h: Math.round(nh) };
+      elements.value = [...elements.value.slice(0, idx), updated, ...elements.value.slice(idx + 1)];
+    }
+  }
 }
 
 function onPointerUp(e: PointerEvent) {
-  if (!dragState) return;
-  const z = zoom.value;
-  const dx = (e.clientX - dragState.sx) / z;
-  const dy = (e.clientY - dragState.sy) / z;
-  const nx = Math.round(dragState.ox + dx);
-  const ny = Math.round(dragState.oy + dy);
-
-  const idx = elements.value.findIndex(el => el.id === dragState!.id);
-  if (idx !== -1) {
-    const updated = { ...elements.value[idx], x: nx, y: ny };
-    elements.value = [...elements.value.slice(0, idx), updated, ...elements.value.slice(idx + 1)];
+  document.body.style.cursor = '';
+  dragDelta.x = 0; dragDelta.y = 0;
+  showCenterGuides.value = false;
+  if (dragState) {
+    const z = zoom.value;
+    const dx = (e.clientX - dragState.sx) / z;
+    const dy = (e.clientY - dragState.sy) / z;
+    const nx = Math.round(dragState.ox + dx);
+    const ny = Math.round(dragState.oy + dy);
+    pushUndo();
+    const idx = elements.value.findIndex(el => el.id === dragState!.id);
+    if (idx !== -1) {
+      const updated = { ...elements.value[idx], x: nx, y: ny };
+      elements.value = [...elements.value.slice(0, idx), updated, ...elements.value.slice(idx + 1)];
+    }
+    if (dragState.el) {
+      dragState.el.style.transform = '';
+      dragState.el.style.transition = '';
+      dragState.el.style.willChange = '';
+    }
+    dragState = null;
   }
-  if (dragState.el) {
-    dragState.el.style.transform = '';
-    dragState.el.style.transition = '';
-    dragState.el.style.willChange = '';
+  if (resizeState) {
+    resizeState = null;
   }
-  dragState = null;
 }
 
 // ── Zoom, records ──
@@ -940,6 +1053,16 @@ function prevRec() { recordIndex.value = (recordIndex.value - 1 + records.value.
 function nextRec() { recordIndex.value = (recordIndex.value + 1) % records.value.length; }
 
 function toastMsg(m: string) { toastCtrl.show(m); }
+
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Shift') { shiftHeld.value = true; return; }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) redo();
+    else undo();
+  }
+}
+function onKeyUp(e: KeyboardEvent) { if (e.key === 'Shift') shiftHeld.value = false; }
 
 function addTextElement() {
   addElement('text');
@@ -957,6 +1080,8 @@ function addImageEl(src: string) {
 onMounted(async () => {
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
 
   // Load custom fonts
   if (fonts.value && fonts.value.length > 0) {
@@ -1009,6 +1134,8 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('keyup', onKeyUp);
 });
 
 // ── Save ──
@@ -1142,6 +1269,7 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .ed-save-status { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
 .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #1Fae6b; }
 .ed-undo-group { display: flex; align-items: center; gap: 2px; margin-left: 14px; }
+.ed-icon-btn--disabled { opacity: 0.3; cursor: not-allowed; }
 .ed-icon-btn {
   border: none; background: transparent; cursor: pointer;
   width: 34px; height: 34px; border-radius: 9px; display: grid;
@@ -1285,6 +1413,12 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
     linear-gradient(90deg, rgba(20,17,14,0.12) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+.canvas-guide {
+  position: absolute; pointer-events: none; z-index: 6;
+  background: #F5521E; opacity: 0.6;
+}
+.canvas-guide-h { left: 0; right: 0; height: 1px; }
+.canvas-guide-v { top: 0; bottom: 0; width: 1px; }
 
 /* canvas elements */
 .canvas-el { position: absolute; }
@@ -1297,14 +1431,20 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
   position: absolute; border: 1.5px solid #F5521E; border-radius: 3px;
   pointer-events: none; z-index: 5;
 }
-.sel-corner {
-  position: absolute; width: 11px; height: 11px; border-radius: 3px;
+.sel-handle {
+  position: absolute; width: 10px; height: 10px;
   background: #fff; border: 1.5px solid #F5521E;
+  pointer-events: auto; cursor: pointer; transition: transform .1s;
 }
-.sel-corner.tl { top: -7px; left: -7px; }
-.sel-corner.tr { top: -7px; right: -7px; }
-.sel-corner.bl { bottom: -7px; left: -7px; }
-.sel-corner.br { bottom: -7px; right: -7px; }
+.sel-handle:hover { transform: scale(1.3); background: #F5521E; }
+.sel-nw { top: -6px; left: -6px; border-radius: 3px 0 0 0; cursor: nw-resize; }
+.sel-n  { top: -6px; left: 50%; margin-left: -5px; border-radius: 2px; cursor: n-resize; height: 6px; }
+.sel-ne { top: -6px; right: -6px; border-radius: 0 3px 0 0; cursor: ne-resize; }
+.sel-w  { top: 50%; left: -6px; margin-top: -5px; border-radius: 2px; cursor: w-resize; width: 6px; }
+.sel-e  { top: 50%; right: -6px; margin-top: -5px; border-radius: 2px; cursor: e-resize; width: 6px; }
+.sel-sw { bottom: -6px; left: -6px; border-radius: 0 0 0 3px; cursor: sw-resize; }
+.sel-s  { bottom: -6px; left: 50%; margin-left: -5px; border-radius: 2px; cursor: s-resize; height: 6px; }
+.sel-se { bottom: -6px; right: -6px; border-radius: 0 0 3px 0; cursor: se-resize; }
 .sel-toolbar {
   position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
   display: flex; gap: 2px; background: var(--ink); padding: 5px;

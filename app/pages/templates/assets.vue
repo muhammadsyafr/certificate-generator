@@ -308,6 +308,8 @@
                 class="al-modal-submit"
                 :disabled="!selectedFile || uploading || (activeTab === 'fonts' && !fontFamilyInput.trim())"
                 @click="confirmUpload"
+                @mouseenter="ctaIn"
+                @mouseleave="ctaOut"
               >
                 {{ uploading ? 'Uploading…' : 'Upload file' }}
               </button>
@@ -460,6 +462,7 @@ function onUploadClick() {
   if (currentTab.value.locked) {
     showToast('🔒 Upgrade to Pro to upload', false)
   } else {
+    uploadType.value = activeTab.value === 'logos' ? 'logo' : 'background'
     showUploadModal.value = true
   }
 }
@@ -959,7 +962,7 @@ onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
   padding: 13px; border-radius: 11px; cursor: pointer;
 }
 .al-modal-submit {
-  flex: 2; border: none; background: var(--al-accent); color: #fff;
+  flex: 2; border: none; background: #F5521E; color: #fff;
   font-family: inherit; font-size: 14px; font-weight: 600;
   padding: 13px; border-radius: 11px; cursor: pointer;
   box-shadow: 0 6px 16px rgba(245,82,30,0.3);
@@ -1003,7 +1006,10 @@ onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
 .al-modal-select {
   width: 100%; border: 1px solid var(--al-line); background: #fff; border-radius: 9px;
   padding: 10px 12px; font-family: inherit; font-size: 13.5px; color: var(--al-ink);
-  outline: none; cursor: pointer;
+  outline: none; cursor: pointer; box-sizing: border-box;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236E665E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
 }
 .al-modal-input {
   width: 100%; border: 1px solid var(--al-line); background: #fff; border-radius: 9px;

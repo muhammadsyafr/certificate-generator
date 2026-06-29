@@ -25,8 +25,9 @@ defineEmits<{
 
 <style scoped>
 .bs-root {
+  height: 36px;
   border: 1px solid rgba(20,17,14,0.09); background: #fff; border-radius: 10px;
-  padding: 9px 12px; font-family: inherit; font-size: 13.5px; color: #14110E;
-  outline: none; cursor: pointer;
+  padding: 0 12px; font-family: inherit; font-size: 13.5px; color: #14110E;
+  outline: none; cursor: pointer; box-sizing: border-box;
 }
 </style>

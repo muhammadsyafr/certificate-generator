@@ -34,6 +34,7 @@
                 <NuxtLink to="/templates/assets" class="tp-tab"
                     >Assets</NuxtLink
                 >
+                <NuxtLink to="/generate" class="tp-tab">Generate</NuxtLink>
             </nav>
 
             <div class="tp-topbar-actions">

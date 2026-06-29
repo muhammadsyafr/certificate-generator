@@ -28,9 +28,9 @@ defineEmits<{
 
 <style scoped>
 .bsi-root {
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: 9px; height: 36px;
   background: #fff; border: 1px solid rgba(20,17,14,0.09);
-  border-radius: 10px; padding: 9px 13px;
+  border-radius: 10px; padding: 0 13px; box-sizing: border-box;
   outline: none;
 }
 .bsi-root:focus-within {

@@ -76,10 +76,12 @@ defineEmits<{
 <style scoped>
 .bvt-root {
     display: flex;
+    height: 32px;
     background: #fff;
     border: 1px solid rgba(20, 17, 14, 0.09);
     border-radius: 10px;
     overflow: hidden;
+    box-sizing: border-box;
     width: 180px;
 }
 
@@ -87,7 +89,7 @@ defineEmits<{
     border: none;
     cursor: pointer;
     width: 36px;
-    height: 34px;
+    height: 100%;
     display: grid;
     place-items: center;
     background: #fff;
