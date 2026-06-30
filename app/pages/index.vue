@@ -55,12 +55,12 @@
                     >
                 </div>
                 <div class="nav-actions">
-                    <a
-                        href="#"
+                    <NuxtLink
+                        to="/signin"
                         class="nav-signin"
                         @mouseenter="navHover"
                         @mouseleave="navLeave"
-                        >Sign in</a
+                        >Sign in</NuxtLink
                     >
                     <NuxtLink
                         to="/templates"

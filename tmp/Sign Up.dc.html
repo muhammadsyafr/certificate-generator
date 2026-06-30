@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Allura&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'General Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#14110E;}
+  ::selection{background:#F5521E;color:#fff;}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes floatyB{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  @keyframes grow{from{width:0}to{width:var(--w)}}
+  input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #fff inset!important;-webkit-text-fill-color:#14110E!important;}
+</style>
+</helmet>
+
+<div style="--accent:#F5521E;--ink:#14110E;--muted:#6E665E;--cream:#F2ECE7;--line:rgba(20,17,14,0.09);min-height:100vh;display:grid;grid-template-columns:1fr 1fr;">
+
+  <!-- LEFT: brand panel -->
+  <div style="background:#14110E;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:40px 48px;">
+    <div style="position:absolute;top:-80px;right:-60px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(245,82,30,0.24),transparent 60%);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-40px;left:-40px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(245,82,30,0.12),transparent 60%);pointer-events:none;"></div>
+
+    <!-- logo -->
+    <a href="Landing Page.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:11px;position:relative;">
+      <span style="display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.1);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9.5" r="5.5" stroke="#F5521E" stroke-width="2"/><path d="M9 14l-2 7 5-3 5 3-2-7" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+      </span>
+      <span style="font-size:17px;font-weight:600;color:#fff;">Certif<span style="color:#F5521E;">y</span></span>
+    </a>
+
+    <!-- main copy -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;">
+      <div style="font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#F5521E;margin-bottom:18px;">Get started free</div>
+      <h2 style="margin:0;font-size:clamp(32px,3.2vw,44px);font-weight:600;color:#fff;line-height:1.05;letter-spacing:-0.03em;">Create your first<br/>certificate today.</h2>
+      <p style="margin:18px 0 0;font-size:16px;color:rgba(255,255,255,0.55);line-height:1.6;max-width:340px;">No credit card needed. Design, preview and export your first batch completely free.</p>
+
+      <!-- what's included -->
+      <div style="margin-top:36px;display:flex;flex-direction:column;gap:13px;">
+        <sc-for list="{{ perks }}" as="p" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:rgba(245,82,30,0.2);flex:0 0 auto;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12l4.5 4.5L19 7" stroke="#F5521E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span style="font-size:14.5px;color:rgba(255,255,255,0.78);">{{ p }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- floating plans badge -->
+      <div style="animation:floatyB 6s ease-in-out infinite .5s;margin-top:36px;display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;width:fit-content;">
+        <div style="display:flex;gap:-4px;">
+          <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#F5521E,#ff8a5b);border:2px solid #14110E;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;">A</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#2F6BFF,#5b8fff);border:2px solid #14110E;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-left:-8px;">M</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1F8A5B,#2dba7d);border:2px solid #14110E;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-left:-8px;">P</span>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:#fff;">Join 4,000+ users</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);">issuing certificates every day</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:12.5px;color:rgba(255,255,255,0.3);position:relative;">© 2026 Certify</div>
+  </div>
+
+  <!-- RIGHT: form panel -->
+  <div style="background:#F2ECE7;display:flex;align-items:center;justify-content:center;padding:40px 32px;overflow-y:auto;">
+    <div style="width:100%;max-width:420px;animation:fadeIn .6s cubic-bezier(.16,1,.3,1) both;">
+
+      <h1 style="margin:0 0 6px;font-size:28px;font-weight:600;letter-spacing:-0.025em;">Create account</h1>
+      <p style="margin:0 0 28px;font-size:15px;color:#6E665E;">Already have an account? <a href="Sign In.dc.html" style="color:#F5521E;font-weight:600;text-decoration:none;">Sign in</a></p>
+
+      <!-- error/success banner -->
+      <sc-if value="{{ showBanner }}">
+        <div style="{{ bannerStyle }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          {{ bannerMsg }}
+        </div>
+      </sc-if>
+
+      <form onSubmit="{{ onSubmit }}" style="display:flex;flex-direction:column;gap:15px;">
+
+        <!-- name row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px;">First name</label>
+            <input type="text" value="{{ firstName }}" onChange="{{ onFirstName }}" onFocus="{{ onFocusA }}" onBlur="{{ onBlurA }}" placeholder="Olivia" style="{{ fieldA }}" />
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px;">Last name</label>
+            <input type="text" value="{{ lastName }}" onChange="{{ onLastName }}" onFocus="{{ onFocusB }}" onBlur="{{ onBlurB }}" placeholder="Hartwell" style="{{ fieldB }}" />
+          </div>
+        </div>
+
+        <!-- email -->
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px;">Work email</label>
+          <div style="{{ emailWrap }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="3" stroke="#6E665E" stroke-width="1.8"/><path d="M2 8l10 7 10-7" stroke="#6E665E" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="email" value="{{ email }}" onChange="{{ onEmail }}" onFocus="{{ emailFocus }}" onBlur="{{ emailBlur }}" placeholder="you@company.com" style="flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#14110E;" />
+          </div>
+        </div>
+
+        <!-- password -->
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px;">Password</label>
+          <div style="{{ pwdWrap }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#6E665E" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#6E665E" stroke-width="1.8"/></svg>
+            <input type="{{ pwdType }}" value="{{ password }}" onChange="{{ onPwd }}" onFocus="{{ pwdFocus }}" onBlur="{{ pwdBlur }}" placeholder="Min. 8 characters" style="flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#14110E;" />
+            <button type="button" onClick="{{ togglePwd }}" style="border:none;background:transparent;cursor:pointer;padding:0;display:grid;place-items:center;">
+              <sc-if value="{{ showPwd }}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#6E665E" stroke-width="1.7"/><circle cx="12" cy="12" r="2.6" stroke="#6E665E" stroke-width="1.7"/></svg>
+              </sc-if>
+              <sc-if value="{{ hidePwd }}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3 3.6M6.2 6.2A16 16 0 0 0 2 12s3.5 7 10 7a9.5 9.5 0 0 0 3.3-.6" stroke="#6E665E" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </sc-if>
+            </button>
+          </div>
+          <!-- strength bar -->
+          <sc-if value="{{ showStrength }}">
+            <div style="margin-top:8px;">
+              <div style="height:4px;border-radius:4px;background:rgba(20,17,14,0.08);overflow:hidden;">
+                <div style="{{ strengthBar }}"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:5px;">
+                <span style="font-size:11.5px;{{ strengthColor }}">{{ strengthLabel }}</span>
+                <span style="font-size:11.5px;color:#6E665E;">{{ strengthTip }}</span>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- role -->
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:7px;">I'm mainly a…</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <sc-for list="{{ roles }}" as="r" hint-placeholder-count="4">
+              <button type="button" onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- terms -->
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13.5px;line-height:1.5;color:#6E665E;">
+          <span onClick="{{ toggleTerms }}" style="{{ termsCheckStyle }}">
+            <sc-if value="{{ termsAgreed }}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 12l4.5 4.5L19 7" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </sc-if>
+          </span>
+          <span>I agree to the <a href="#" style="color:#14110E;text-decoration:underline;text-underline-offset:2px;">Terms of service</a> and <a href="#" style="color:#14110E;text-decoration:underline;text-underline-offset:2px;">Privacy policy</a></span>
+        </label>
+
+        <!-- submit -->
+        <button type="submit" style="{{ submitStyle }}" onMouseEnter="{{ btnIn }}" onMouseLeave="{{ btnOut }}">
+          <sc-if value="{{ loading }}">
+            <svg style="animation:spinSlow .8s linear infinite" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.3)" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Creating account…
+          </sc-if>
+          <sc-if value="{{ notLoading }}">
+            Create free account
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </sc-if>
+        </button>
+      </form>
+
+      <!-- divider -->
+      <div style="display:flex;align-items:center;gap:14px;margin:20px 0;">
+        <div style="flex:1;height:1px;background:rgba(20,17,14,0.1);"></div>
+        <span style="font-size:12.5px;color:#6E665E;font-weight:500;">or sign up with</span>
+        <div style="flex:1;height:1px;background:rgba(20,17,14,0.1);"></div>
+      </div>
+
+      <!-- social -->
+      <div style="display:flex;gap:10px;">
+        <button onClick="{{ socialLogin }}" style="flex:1;border:1px solid rgba(20,17,14,0.12);background:#fff;font-family:inherit;font-size:13.5px;font-weight:600;padding:12px 14px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .2s,transform .15s;" onMouseEnter="{{ socialIn }}" onMouseLeave="{{ socialOut }}">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Google
+        </button>
+        <button onClick="{{ socialLogin }}" style="flex:1;border:1px solid rgba(20,17,14,0.12);background:#fff;font-family:inherit;font-size:13.5px;font-weight:600;padding:12px 14px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .2s,transform .15s;" onMouseEnter="{{ socialIn }}" onMouseLeave="{{ socialOut }}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#14110E"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          GitHub
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    firstName: '', lastName: '', email: '', password: '',
+    role: 'admin', showPwd: false,
+    focusA: false, focusB: false, emailFocused: false, pwdFocused: false,
+    termsAgreed: false, loading: false,
+    showBanner: false, bannerMsg: '', bannerOk: true
+  };
+
+  fieldStyle(focused) {
+    return {
+      width: '100%', border: `1.5px solid ${focused ? '#14110E' : 'rgba(20,17,14,0.12)'}`,
+      borderRadius: '11px', padding: '12px 14px', fontFamily: 'inherit',
+      fontSize: '14.5px', color: '#14110E', background: '#fff', outline: 'none',
+      boxShadow: focused ? '0 0 0 3px rgba(20,17,14,0.06)' : 'none',
+      transition: 'border-color .15s, box-shadow .15s'
+    };
+  }
+
+  wrapStyle(focused) {
+    return {
+      display: 'flex', alignItems: 'center', gap: '10px',
+      background: '#fff', border: `1.5px solid ${focused ? '#14110E' : 'rgba(20,17,14,0.12)'}`,
+      borderRadius: '11px', padding: '12px 14px',
+      boxShadow: focused ? '0 0 0 3px rgba(20,17,14,0.06)' : 'none',
+      transition: 'border-color .15s, box-shadow .15s'
+    };
+  }
+
+  pwdStrength(pwd) {
+    if (!pwd) return { score: 0, label: '', tip: '', color: '' };
+    let s = 0;
+    if (pwd.length >= 8) s++;
+    if (/[A-Z]/.test(pwd)) s++;
+    if (/[0-9]/.test(pwd)) s++;
+    if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['', 'color:#DC3545', 'color:#F59E0B', 'color:#1F8A5B', 'color:#1F8A5B'];
+    const tips = ['', 'Add uppercase letters', 'Add numbers', 'Add symbols', 'Looking great!'];
+    return { score: s, label: labels[s], color: colors[s], tip: tips[s] };
+  }
+
+  renderVals() {
+    const S = this.state;
+    const accent = '#F5521E';
+    const str = this.pwdStrength(S.password);
+
+    const btnIn = (e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 14px 32px rgba(20,17,14,0.28)'; };
+    const btnOut = (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 22px rgba(20,17,14,0.2)'; };
+    const socialIn = (e) => { e.currentTarget.style.borderColor = '#14110E'; e.currentTarget.style.transform = 'translateY(-1px)'; };
+    const socialOut = (e) => { e.currentTarget.style.borderColor = 'rgba(20,17,14,0.12)'; e.currentTarget.style.transform = 'none'; };
+
+    const roleList = [
+      { id: 'admin', label: 'Admin / HR' },
+      { id: 'trainer', label: 'Trainer' },
+      { id: 'event', label: 'Event organizer' },
+      { id: 'other', label: 'Other' }
+    ];
+    const roles = roleList.map(r => ({
+      label: r.label,
+      style: {
+        border: S.role === r.id ? `2px solid #14110E` : '1.5px solid rgba(20,17,14,0.12)',
+        background: S.role === r.id ? '#14110E' : '#fff',
+        color: S.role === r.id ? '#fff' : '#14110E',
+        fontFamily: 'inherit', fontSize: '13px', fontWeight: 600,
+        padding: '8px 14px', borderRadius: '999px', cursor: 'pointer',
+        transition: 'all .15s'
+      },
+      onClick: () => this.setState({ role: r.id })
+    }));
+
+    const strengthColors = ['', '#DC3545', '#F59E0B', '#1F8A5B', '#1F8A5B'];
+
+    return {
+      firstName: S.firstName, lastName: S.lastName, email: S.email, password: S.password,
+      showPwd: S.showPwd, hidePwd: !S.showPwd,
+      pwdType: S.showPwd ? 'text' : 'password',
+      termsAgreed: S.termsAgreed, loading: S.loading, notLoading: !S.loading,
+      showBanner: S.showBanner, bannerMsg: S.bannerMsg,
+      bannerStyle: {
+        display: 'flex', alignItems: 'center', gap: '9px',
+        background: S.bannerOk ? 'rgba(31,138,91,0.08)' : 'rgba(220,53,69,0.07)',
+        border: `1px solid ${S.bannerOk ? 'rgba(31,138,91,0.22)' : 'rgba(220,53,69,0.22)'}`,
+        borderRadius: '10px', padding: '11px 14px', fontSize: '13.5px',
+        color: S.bannerOk ? '#1F8A5B' : '#B91C2E', marginBottom: '4px',
+        currentColor: S.bannerOk ? '#1F8A5B' : '#DC3545'
+      },
+      fieldA: this.fieldStyle(S.focusA),
+      fieldB: this.fieldStyle(S.focusB),
+      emailWrap: this.wrapStyle(S.emailFocused),
+      pwdWrap: this.wrapStyle(S.pwdFocused),
+      roles,
+      perks: ['Drag-and-drop certificate editor', 'Upload 1 background, add signature', 'Generate your first batch free', 'Upgrade anytime to unlock Pro'],
+      showStrength: S.password.length > 0,
+      strengthBar: { height: '100%', width: (str.score / 4 * 100) + '%', background: strengthColors[str.score] || '#E8E1D9', borderRadius: '4px', transition: 'width .4s, background .3s' },
+      strengthLabel: str.label, strengthColor: str.color, strengthTip: str.tip,
+      checkboxStyle: (checked) => ({ display: 'grid', placeItems: 'center', width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0, cursor: 'pointer', background: checked ? '#14110E' : '#fff', border: checked ? '2px solid #14110E' : '1.5px solid rgba(20,17,14,0.2)', transition: 'background .15s' }),
+      termsCheckStyle: {
+        display: 'grid', placeItems: 'center', width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0, cursor: 'pointer',
+        background: S.termsAgreed ? '#14110E' : '#fff',
+        border: S.termsAgreed ? '2px solid #14110E' : '1.5px solid rgba(20,17,14,0.2)',
+        transition: 'background .15s', marginTop: '2px'
+      },
+      submitStyle: {
+        border: 'none', background: '#14110E', color: '#fff', fontFamily: 'inherit',
+        fontSize: '15px', fontWeight: 600, padding: '15px', borderRadius: '11px',
+        cursor: S.loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: '9px', boxShadow: '0 8px 22px rgba(20,17,14,0.2)',
+        transition: 'transform .2s, box-shadow .2s', marginTop: '2px'
+      },
+      onFirstName: (e) => this.setState({ firstName: e.target.value }),
+      onLastName: (e) => this.setState({ lastName: e.target.value }),
+      onEmail: (e) => this.setState({ email: e.target.value, showBanner: false }),
+      onPwd: (e) => this.setState({ password: e.target.value }),
+      onFocusA: () => this.setState({ focusA: true }), onBlurA: () => this.setState({ focusA: false }),
+      onFocusB: () => this.setState({ focusB: true }), onBlurB: () => this.setState({ focusB: false }),
+      emailFocus: () => this.setState({ emailFocused: true }), emailBlur: () => this.setState({ emailFocused: false }),
+      pwdFocus: () => this.setState({ pwdFocused: true }), pwdBlur: () => this.setState({ pwdFocused: false }),
+      togglePwd: () => this.setState(s => ({ showPwd: !s.showPwd })),
+      toggleTerms: () => this.setState(s => ({ termsAgreed: !s.termsAgreed })),
+      socialLogin: () => this.setState({ showBanner: true, bannerOk: false, bannerMsg: 'Social login not wired in demo mode.' }),
+      btnIn, btnOut, socialIn, socialOut,
+      onSubmit: (e) => {
+        e.preventDefault();
+        if (!S.firstName) { this.setState({ showBanner: true, bannerOk: false, bannerMsg: 'Please enter your first name.' }); return; }
+        if (!S.email) { this.setState({ showBanner: true, bannerOk: false, bannerMsg: 'Please enter your email.' }); return; }
+        if (S.password.length < 8) { this.setState({ showBanner: true, bannerOk: false, bannerMsg: 'Password must be at least 8 characters.' }); return; }
+        if (!S.termsAgreed) { this.setState({ showBanner: true, bannerOk: false, bannerMsg: 'Please agree to the Terms of service.' }); return; }
+        this.setState({ loading: true, showBanner: false });
+        setTimeout(() => {
+          this.setState({ loading: false });
+          window.location.href = 'Templates.dc.html';
+        }, 1600);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
