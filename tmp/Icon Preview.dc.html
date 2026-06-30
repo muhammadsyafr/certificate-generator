@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#F2ECE7;font-family:'General Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#14110E;}
+  ::selection{background:#F5521E;color:#fff;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:40px 40px 64px;">
+
+  <!-- header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;">
+    <div>
+      <h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em;">Icon set</h1>
+      <p style="margin:5px 0 0;font-size:14px;color:#6E665E;">16 icons · SVG · <code style="font-size:12px;background:rgba(20,17,14,0.07);padding:2px 7px;border-radius:5px;">assets/icons/</code></p>
+    </div>
+    <a href="Templates.dc.html" style="text-decoration:none;border:1px solid rgba(20,17,14,0.12);background:#fff;color:#14110E;font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:10px;display:flex;align-items:center;gap:7px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 5l-7 7 7 7" stroke="#14110E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to app
+    </a>
+  </div>
+
+  <!-- grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;">
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-app-logo.svg" width="64" height="64" alt="App logo" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">App logo</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-app-logo</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-certificate.svg" width="64" height="64" alt="Certificate" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Certificate</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-certificate</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-seal.svg" width="64" height="64" alt="Seal" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Seal</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-seal</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-background.svg" width="64" height="64" alt="Background" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Background</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-background</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-signature.svg" width="64" height="64" alt="Signature" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Signature</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-signature</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-font.svg" width="64" height="64" alt="Font" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Font</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-font</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-logo-asset.svg" width="64" height="64" alt="Logo asset" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Logo asset</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-logo-asset</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-csv.svg" width="64" height="64" alt="CSV" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">CSV data</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-csv</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-pdf.svg" width="64" height="64" alt="PDF" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">PDF export</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-pdf</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-generate.svg" width="64" height="64" alt="Generate" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Generate</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-generate</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-upload.svg" width="64" height="64" alt="Upload" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Upload</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-upload</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-download.svg" width="64" height="64" alt="Download" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Download</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-download</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-check.svg" width="64" height="64" alt="Check" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Success</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-check</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-lock.svg" width="64" height="64" alt="Lock" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Lock / Pro</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-lock</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-pro-badge.svg" width="64" height="64" alt="Pro badge" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Pro badge</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-pro-badge</div></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:22px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(20,17,14,0.05);">
+      <img src="assets/icons/icon-template.svg" width="64" height="64" alt="Template" />
+      <div style="text-align:center;"><div style="font-size:13px;font-weight:600;">Template</div><div style="font-size:11.5px;color:#6E665E;margin-top:2px;">icon-template</div></div>
+    </div>
+
+  </div>
+
+  <!-- sizes strip -->
+  <div style="margin-top:48px;">
+    <div style="font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6E665E;margin-bottom:18px;">Sizes</div>
+    <div style="display:flex;align-items:flex-end;gap:28px;background:#fff;border:1px solid rgba(20,17,14,0.09);border-radius:16px;padding:24px 28px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="16" height="16" alt="16px" /><span style="font-size:11px;color:#6E665E;">16</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="20" height="20" alt="20px" /><span style="font-size:11px;color:#6E665E;">20</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="24" height="24" alt="24px" /><span style="font-size:11px;color:#6E665E;">24</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="32" height="32" alt="32px" /><span style="font-size:11px;color:#6E665E;">32</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="48" height="48" alt="48px" /><span style="font-size:11px;color:#6E665E;">48</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="64" height="64" alt="64px" /><span style="font-size:11px;color:#6E665E;">64</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="assets/icons/icon-seal.svg" width="96" height="96" alt="96px" /><span style="font-size:11px;color:#6E665E;">96</span></div>
+    </div>
+  </div>
+
+  <!-- dark bg strip -->
+  <div style="margin-top:24px;">
+    <div style="font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6E665E;margin-bottom:18px;">On dark</div>
+    <div style="display:flex;align-items:center;gap:22px;background:#14110E;border-radius:16px;padding:24px 28px;flex-wrap:wrap;">
+      <img src="assets/icons/icon-app-logo.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-generate.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-upload.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-certificate.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-pdf.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-pro-badge.svg" width="48" height="48" alt="" />
+      <img src="assets/icons/icon-lock.svg" width="48" height="48" alt="" />
+    </div>
+  </div>
+
+  <!-- download note -->
+  <div style="margin-top:32px;display:flex;align-items:center;gap:10px;font-size:13.5px;color:#6E665E;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#6E665E" stroke-width="1.8"/><path d="M12 8v5M12 16v.5" stroke="#6E665E" stroke-width="1.9" stroke-linecap="round"/></svg>
+    All icons are SVG — use at any size without quality loss. Reference as <code style="background:rgba(20,17,14,0.07);padding:2px 7px;border-radius:5px;font-size:12px;">assets/icons/icon-name.svg</code> from any page.
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
