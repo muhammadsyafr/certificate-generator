@@ -29,7 +29,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l3.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20z" stroke="#14110E" stroke-width="1.8" stroke-linejoin="round"/></svg>
           Open editor
         </NuxtLink>
-        <div class="al-avatar">A</div>
+        <SharedUserMenu />
       </div>
     </header>
 
@@ -383,8 +383,31 @@
 </template>
 
 <script setup lang="ts">
-const { data: assets, refresh: refreshAssets } = await useFetch('/api/assets')
-const { data: fonts, refresh: refreshFonts } = await useFetch('/api/fonts')
+const assets = ref<any[]>([]);
+const fonts = ref<any[]>([]);
+
+async function refreshAssets() {
+  try {
+    const { get } = useApi();
+    assets.value = await get('/api/assets');
+  } catch (err) {
+    console.error('Failed to load assets:', err);
+  }
+}
+
+async function refreshFonts() {
+  try {
+    const { get } = useApi();
+    fonts.value = await get('/api/fonts');
+  } catch (err) {
+    console.error('Failed to load fonts:', err);
+  }
+}
+
+onMounted(() => {
+  refreshAssets();
+  refreshFonts();
+});
 
 const activeTab = ref('backgrounds')
 const selectedId = ref<string | number | null>(null)
@@ -427,9 +450,9 @@ watchEffect(() => {
   }
 })
 
-const bgAssets = computed(() => (assets.value as any[])?.filter(a => a.type === 'background') || [])
-const logoAssets = computed(() => (assets.value as any[])?.filter(a => a.type === 'logo') || [])
-const fontAssets = computed(() => (fonts.value as any[]) || [])
+const bgAssets = computed(() => assets.value?.filter(a => a.type === 'background') || [])
+const logoAssets = computed(() => assets.value?.filter(a => a.type === 'logo') || [])
+const fontAssets = computed(() => fonts.value || [])
 
 const tabs = computed(() => [
   { key: 'backgrounds', label: 'Backgrounds', count: bgAssets.value.length, locked: false, iconSvg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 4-4 5 4"/></svg>', title: 'Backgrounds', subtitle: 'Add as the base layer in your certificate canvas.', accept: 'PNG, JPG, SVG — max 10 MB', fileAccept: 'image/png,image/jpeg,image/svg+xml' },
@@ -837,11 +860,12 @@ function cancelDelete() {
 async function executeDelete() {
   if (!deletingAsset.value) return
   try {
+    const { del } = useApi();
     if (activeTab.value === 'fonts') {
-      await $fetch(`/api/fonts/${deletingAsset.value.id}`, { method: 'DELETE' })
+      await del(`/api/fonts/${deletingAsset.value.id}`)
       refreshFonts()
     } else {
-      await $fetch(`/api/assets/${deletingAsset.value.id}`, { method: 'DELETE' })
+      await del(`/api/assets/${deletingAsset.value.id}`)
       refreshAssets()
     }
     showDeleteConfirm.value = false
@@ -856,11 +880,12 @@ async function executeDelete() {
 async function deleteSelected() {
   if (!selectedAsset.value) return
   try {
+    const { del } = useApi();
     if (activeTab.value === 'fonts') {
-      await $fetch(`/api/fonts/${selectedAsset.value.id}`, { method: 'DELETE' })
+      await del(`/api/fonts/${selectedAsset.value.id}`)
       refreshFonts()
     } else {
-      await $fetch(`/api/assets/${selectedAsset.value.id}`, { method: 'DELETE' })
+      await del(`/api/assets/${selectedAsset.value.id}`)
       refreshAssets()
     }
     selectedId.value = null
@@ -899,7 +924,9 @@ function extractGradient(a: any): string {
 function slotIn(e: MouseEvent) { (e.currentTarget as HTMLElement).style.borderColor = '#F5521E'; (e.currentTarget as HTMLElement).style.background = '#FFF8F6' }
 function slotOut(e: MouseEvent) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(20,17,14,0.18)'; (e.currentTarget as HTMLElement).style.background = '#fff' }
 
-onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
+onUnmounted(() => { 
+  if (toastTimer) clearTimeout(toastTimer);
+})
 </script>
 
 <style scoped>

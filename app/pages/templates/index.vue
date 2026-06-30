@@ -59,7 +59,7 @@
                     </svg>
                     New template
                 </button>
-                <div class="tp-avatar">A</div>
+                <SharedUserMenu />
             </div>
         </header>
 
@@ -965,7 +965,29 @@
 <script setup lang="ts">
 import { navigateTo } from "#app";
 
-const { data: templates, pending, refresh } = await useFetch("/api/templates");
+const { get } = useApi();
+const templates = ref<any[]>([]);
+const pending = ref(false);
+
+async function loadTemplates() {
+  pending.value = true;
+  try {
+    templates.value = await get('/api/templates');
+  } catch (err) {
+    console.error('Failed to load templates:', err);
+    templates.value = [];
+  } finally {
+    pending.value = false;
+  }
+}
+
+async function refresh() {
+  await loadTemplates();
+}
+
+onMounted(() => {
+  loadTemplates();
+});
 
 const view = ref<"grid" | "list">("grid");
 const sortBy = ref("recent");
@@ -998,7 +1020,7 @@ const {
     delHoverOut: DEL_OUT,
 } = useHoverIntents();
 
-const allTemplates = computed(() => (templates.value as any[]) || []);
+const allTemplates = computed(() => templates.value || []);
 
 const gridItems = computed(() => {
     let list = allTemplates.value.map((t, i) => {
@@ -1078,16 +1100,14 @@ function runGenerate() {
 
 async function duplicateTemplate(t: any) {
     try {
+        const { post } = useApi();
         const original = allTemplates.value.find((x: any) => x.id === t.id);
         if (!original) return;
         const layout =
             typeof original.layout === "string"
                 ? JSON.parse(original.layout)
                 : original.layout;
-        await $fetch("/api/templates", {
-            method: "POST",
-            body: { name: `${original.name} (copy)`, layout },
-        });
+        await post("/api/templates", { name: `${original.name} (copy)`, layout });
         showToast(`"${t.name}" duplicated`);
         refresh();
     } catch {
@@ -1109,9 +1129,8 @@ async function confirmDelete() {
     if (!deletingTemplate.value) return;
     deleting.value = true;
     try {
-        await $fetch(`/api/templates/${deletingTemplate.value.id}`, {
-            method: "DELETE",
-        });
+        const { del } = useApi();
+        await del(`/api/templates/${deletingTemplate.value.id}`);
         showDeleteModal.value = false;
         deletingTemplate.value = null;
         showToast("Template deleted");

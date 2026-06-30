@@ -22,7 +22,7 @@
           Free plan
           <a href="/#pricing" class="gr-plan-upgrade">Upgrade</a>
         </div>
-        <div class="gr-avatar">A</div>
+        <SharedUserMenu />
       </div>
     </header>
 
@@ -179,8 +179,22 @@ import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
 const route = useRoute()
-const { data: templates } = await useFetch('/api/templates')
-const { data: fonts } = await useFetch('/api/fonts')
+const templates = ref<any[]>([]);
+const fonts = ref<any[]>([]);
+
+async function loadData() {
+  try {
+    const { get } = useApi();
+    templates.value = await get('/api/templates');
+    fonts.value = await get('/api/fonts');
+  } catch (err) {
+    console.error('Failed to load data:', err);
+  }
+}
+
+onMounted(() => {
+  loadData();
+});
 
 watch(fonts, (newFonts) => {
   if (newFonts && newFonts.length > 0) {
@@ -215,7 +229,7 @@ if (route.query.template) selectedTemplateId.value = parseInt(route.query.templa
 
 const templatePlaceholders = computed(() => {
   if (!selectedTemplateId.value || !templates.value) return []
-  const template = (templates.value as any[]).find(t => t.id === selectedTemplateId.value)
+  const template = templates.value.find(t => t.id === selectedTemplateId.value)
   if (!template) return []
   try {
     const layout = JSON.parse(template.layout)
@@ -289,8 +303,9 @@ async function generateBulk() {
   if (!selectedTemplateId.value || data.value.length === 0) return
   generating.value = true; generationDone.value = false; progress.value = 0
   try {
+    const { get } = useApi();
     const zip = new JSZip()
-    const template = await $fetch(`/api/templates/${selectedTemplateId.value}`)
+    const template = await get(`/api/templates/${selectedTemplateId.value}`)
     const layout = JSON.parse(template.layout)
     for (let i = 0; i < data.value.length; i++) {
       const blob = await renderCertificate(layout, data.value[i], outputFormat.value)

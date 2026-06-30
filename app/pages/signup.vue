@@ -238,17 +238,38 @@ function socialOut(e: MouseEvent) {
   t.style.transform = "none";
 }
 
-function onSubmit() {
+async function onSubmit() {
   if (!firstName.value) { showBannerMsg("Please enter your first name.", false); return; }
   if (!email.value) { showBannerMsg("Please enter your email.", false); return; }
   if (password.value.length < 8) { showBannerMsg("Password must be at least 8 characters.", false); return; }
   if (!termsAgreed.value) { showBannerMsg("Please agree to the Terms of service.", false); return; }
+  
   loading.value = true;
   showBanner.value = false;
-  setTimeout(() => {
-    loading.value = false;
+  
+  try {
+    const { post, setToken } = useApi();
+    
+    const fullName = `${firstName.value} ${lastName.value}`.trim();
+    
+    const response = await post<{ token: string; user: any }>('/api/auth/register', {
+      email: email.value,
+      password: password.value,
+      name: fullName
+    });
+    
+    // Store token
+    setToken(response.token);
+    
+    // Navigate to templates
     navigateTo("/templates");
-  }, 1600);
+  } catch (err: any) {
+    showBannerMsg(err.message || "Registration failed. Please try again.", false);
+    if (bannerTimer) clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => { showBanner.value = false; }, 4000);
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 

@@ -5,6 +5,12 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: [],
   css: ["~/assets/css/main.css"],
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:4000',
+      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    }
+  },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {

@@ -74,7 +74,7 @@
           </svg>
           Generate {{ records.length }} PDFs
         </button>
-        <div class="ed-avatar">A</div>
+        <SharedUserMenu />
       </div>
     </header>
 
@@ -618,8 +618,22 @@ const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved');
 const lastSavedAt = ref<Date | null>(null);
 
 // ── Assets & fonts ──
-const { data: assets } = await useFetch('/api/assets');
-const { data: fonts } = await useFetch('/api/fonts');
+const assets = ref<any[]>([]);
+const fonts = ref<any[]>([]);
+
+async function loadAssets() {
+  try {
+    const { get } = useApi();
+    assets.value = await get('/api/assets');
+    fonts.value = await get('/api/fonts');
+  } catch (err) {
+    console.error('Failed to load assets:', err);
+  }
+}
+
+onMounted(() => {
+  loadAssets();
+});
 
 const backgrounds = computed(() => assets.value?.filter((a: any) => a.type === 'background') || []);
 const allImages = computed(() => assets.value?.filter((a: any) => a.type === 'logo' || a.type === 'free-image') || []);
@@ -1263,7 +1277,8 @@ onMounted(async () => {
 
   if (!isNew.value && templateId.value) {
     try {
-      const data: any = await $fetch(`/api/templates/${templateId.value}`);
+      const { get } = useApi();
+      const data: any = await get(`/api/templates/${templateId.value}`);
       if (data) {
         templateName.value = data.name || '';
         const saved: Layout = data.layout ? (typeof data.layout === 'string' ? JSON.parse(data.layout) : data.layout) : null;
@@ -1357,7 +1372,8 @@ async function saveTemplate() {
     };
 
     if (isNew.value) {
-      const result: any = await $fetch('/api/templates', { method: 'POST', body: payload });
+      const { post } = useApi();
+      const result: any = await post('/api/templates', payload);
       if (result?.id) {
         router.replace(`/templates/${result.id}`);
         saveStatus.value = 'saved';
@@ -1365,7 +1381,8 @@ async function saveTemplate() {
         toastMsg('Template saved');
       }
     } else {
-      await $fetch(`/api/templates/${templateId.value}`, { method: 'PUT', body: payload });
+      const { put } = useApi();
+      await put(`/api/templates/${templateId.value}`, payload);
       saveStatus.value = 'saved';
       lastSavedAt.value = new Date();
       toastMsg('Template saved');

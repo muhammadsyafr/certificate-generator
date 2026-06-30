@@ -193,7 +193,7 @@ function socialOut(e: MouseEvent) {
   t.style.transform = "none";
 }
 
-function onSubmit() {
+async function onSubmit() {
   if (!email.value) {
     showError.value = true;
     errorMsg.value = "Please enter your email address.";
@@ -204,12 +204,31 @@ function onSubmit() {
     errorMsg.value = "Please enter your password.";
     return;
   }
+  
   loading.value = true;
   showError.value = false;
-  setTimeout(() => {
-    loading.value = false;
+  
+  try {
+    const { post, setToken } = useApi();
+    
+    const response = await post<{ token: string; user: any }>('/api/auth/login', {
+      email: email.value,
+      password: password.value
+    });
+    
+    // Store token
+    setToken(response.token);
+    
+    // Navigate to templates
     navigateTo("/templates");
-  }, 1400);
+  } catch (err: any) {
+    showError.value = true;
+    errorMsg.value = err.message || "Invalid email or password.";
+    if (errorTimer) clearTimeout(errorTimer);
+    errorTimer = setTimeout(() => { showError.value = false; }, 4000);
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
