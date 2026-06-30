@@ -151,6 +151,7 @@
 import { ref } from "vue";
 
 const { ctaIn, ctaOut } = useHoverIntents();
+const { user, loadUser } = useAuth();
 
 const email = ref("");
 const password = ref("");
@@ -163,6 +164,14 @@ const showError = ref(false);
 const errorMsg = ref("");
 
 let errorTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Redirect if already authenticated
+onMounted(async () => {
+  await loadUser();
+  if (user.value) {
+    navigateTo("/templates");
+  }
+});
 
 function clearError() {
   showError.value = false;
