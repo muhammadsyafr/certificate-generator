@@ -23,8 +23,8 @@
           @blur="editingTitle = false"
         />
         <div class="ed-save-status">
-          <span class="save-dot" :style="{ background: editingTitle ? '#f59e0b' : '#1Fae6b' }"></span>
-          {{ editingTitle ? 'Editing...' : 'All changes saved' }}
+          <span class="save-dot" :class="saveDotClass"></span>
+          {{ saveStatusText }}
         </div>
       </div>
       <div class="ed-plan-pill">
@@ -51,7 +51,7 @@
           {{ previewing ? 'Edit' : 'Preview' }}
         </button>
         <button
-          :disabled="saving"
+          :disabled="!canSave"
           class="ed-btn-outline"
           @mouseenter="softIn"
           @mouseleave="whiteOut"
@@ -559,7 +559,7 @@
           </div>
 
           <button
-            :disabled="saving"
+            :disabled="!canSave"
             class="ed-btn-accent full"
             @mouseenter="ctaIn"
             @mouseleave="ctaOut"
@@ -610,6 +610,12 @@ const csvColumns = ref<string[]>(['full_name', 'course', 'date']);
 const editingTitle = ref(false);
 const hiddenIds = ref<Record<string, boolean>>({});
 const loaded = ref(false);
+
+// Auto-save
+const { debounce } = useRateLimit();
+const { sanitizeFileName, validateTemplateName } = useFormValidation();
+const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved');
+const lastSavedAt = ref<Date | null>(null);
 
 // ── Assets & fonts ──
 const { data: assets } = await useFetch('/api/assets');
@@ -758,6 +764,31 @@ const canvasSizeLabel = computed(() => {
   const preset = sizePresets.find(s => s.key === canvasSize.value);
   if (preset && preset.key !== 'custom') return `${preset.label} · ${layout.width} × ${layout.height} px`;
   return `${layout.width} × ${layout.height} px`;
+});
+
+// Save status computed
+const saveDotClass = computed(() => {
+  if (saveStatus.value === 'saving') return 'save-dot--saving';
+  if (saveStatus.value === 'unsaved') return 'save-dot--unsaved';
+  return 'save-dot--saved';
+});
+
+const saveStatusText = computed(() => {
+  if (editingTitle.value) return 'Editing...';
+  if (saveStatus.value === 'saving') return 'Saving...';
+  if (saveStatus.value === 'unsaved') return 'Unsaved changes';
+  if (lastSavedAt.value) {
+    const now = new Date();
+    const diff = now.getTime() - lastSavedAt.value.getTime();
+    if (diff < 5000) return 'Saved just now';
+    if (diff < 60000) return 'Saved';
+    return 'All changes saved';
+  }
+  return 'All changes saved';
+});
+
+const canSave = computed(() => {
+  return saveStatus.value === 'unsaved' && !saving.value;
 });
 
 const defaultElements: EdElement[] = [
@@ -1277,11 +1308,23 @@ onUnmounted(() => {
 
 // ── Save ──
 async function saveTemplate() {
-  if (!templateName.value.trim()) {
-    toastMsg('Please enter a template name');
+  // Validate template name
+  const validation = validateTemplateName(templateName.value);
+  if (!validation.valid) {
+    toastMsg(validation.error || 'Invalid template name');
+    saveStatus.value = 'unsaved';
     return;
   }
+
+  // Sanitize template name
+  const sanitizedName = sanitizeFileName(templateName.value.trim());
+  if (sanitizedName !== templateName.value) {
+    templateName.value = sanitizedName;
+  }
+
   saving.value = true;
+  saveStatus.value = 'saving';
+  
   try {
     const lw = layout.width;
     const lh = layout.height;
@@ -1317,18 +1360,73 @@ async function saveTemplate() {
       const result: any = await $fetch('/api/templates', { method: 'POST', body: payload });
       if (result?.id) {
         router.replace(`/templates/${result.id}`);
+        saveStatus.value = 'saved';
+        lastSavedAt.value = new Date();
         toastMsg('Template saved');
       }
     } else {
       await $fetch(`/api/templates/${templateId.value}`, { method: 'PUT', body: payload });
+      saveStatus.value = 'saved';
+      lastSavedAt.value = new Date();
       toastMsg('Template saved');
     }
   } catch (e) {
     toastMsg('Failed to save: ' + (e as Error).message);
+    saveStatus.value = 'unsaved';
   } finally {
     saving.value = false;
   }
 }
+
+// Auto-save with debounce (1 second delay)
+const autoSave = debounce(async () => {
+  if (!isNew.value && templateName.value.trim()) {
+    await saveTemplate();
+  }
+}, 1000);
+
+// Mark as unsaved when changes occur
+function markUnsaved() {
+  if (saveStatus.value === 'saved') {
+    saveStatus.value = 'unsaved';
+  }
+}
+
+// Watch for changes to trigger auto-save
+watch(() => templateName.value, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => layout.background, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => layout.backgroundColor, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => layout.width, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => layout.height, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => elements.value.length, () => {
+  markUnsaved();
+  autoSave();
+});
+
+watch(() => elements.value, () => {
+  markUnsaved();
+  autoSave();
+}, { deep: true });
 
 function generatePdfs() {
   toastMsg(`Generating ${records.length} PDFs — demo mode`);

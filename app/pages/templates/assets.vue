@@ -264,6 +264,7 @@
             <!-- drop zone -->
             <div
               class="al-dropzone"
+              :class="{ 'al-dropzone--error': validationError }"
               @click="triggerFileInput"
               @dragover.prevent
               @drop.prevent="onDrop"
@@ -277,6 +278,41 @@
               <div class="al-dropzone-title">{{ selectedFile ? selectedFile.name : 'Drop file here' }}</div>
               <div class="al-dropzone-sub">or <span class="al-dropzone-link">browse</span> to upload</div>
               <div class="al-dropzone-accept">{{ currentTab.accept }}</div>
+              
+              <!-- File info -->
+              <div v-if="selectedFile && !validationError" class="al-dropzone-info">
+                <div class="al-info-item">
+                  <span>Size:</span>
+                  <span>{{ formatBytes(originalSize) }}</span>
+                </div>
+                <div v-if="compressedSize && compressedSize < originalSize" class="al-info-item al-info-compressed">
+                  <span>Compressed:</span>
+                  <span>{{ formatBytes(compressedSize) }} ({{ Math.round((1 - compressedSize / originalSize) * 100) }}% saved)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Validation error -->
+            <div v-if="validationError" class="al-validation-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#DC3545" stroke-width="1.8"/><path d="M12 8v5M12 16v.5" stroke="#DC3545" stroke-width="2" stroke-linecap="round"/></svg>
+              {{ validationError }}
+            </div>
+
+            <!-- Compression status -->
+            <div v-if="compressing" class="al-compression-status">
+              <div class="al-compression-spinner"></div>
+              <span>Compressing image...</span>
+            </div>
+
+            <!-- Upload progress -->
+            <div v-if="isUploading" class="al-upload-progress">
+              <div class="al-progress-bar-wrap">
+                <div class="al-progress-bar-fill" :style="{ width: progress + '%' }"></div>
+              </div>
+              <div class="al-progress-info">
+                <span>{{ progress }}%</span>
+                <span class="al-progress-speed">{{ formatSpeed }}</span>
+              </div>
             </div>
 
             <!-- asset type select (for backgrounds/logos) -->
@@ -306,12 +342,14 @@
               <button class="al-modal-cancel" @click="closeUploadModal">Cancel</button>
               <button
                 class="al-modal-submit"
-                :disabled="!selectedFile || uploading || (activeTab === 'fonts' && !fontFamilyInput.trim())"
+                :disabled="!selectedFile || uploading || compressing || validationError || (activeTab === 'fonts' && !fontFamilyInput.trim())"
                 @click="confirmUpload"
                 @mouseenter="ctaIn"
                 @mouseleave="ctaOut"
               >
-                {{ uploading ? 'Uploading…' : 'Upload file' }}
+                <span v-if="compressing">Compressing...</span>
+                <span v-else-if="uploading">Uploading {{ progress }}%...</span>
+                <span v-else>Upload file</span>
               </button>
             </div>
           </div>
@@ -365,7 +403,29 @@ const toastVisible = ref(false)
 const toastOk = ref(true)
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
+// Validation & Performance
+const { validateImage, validateFont, formatBytes: formatBytesUtil } = useFileValidation()
+const { compressImage, useUploadProgress, useNetworkStatus } = usePerformance()
+const { retry } = useRateLimit()
+
+const validationError = ref('')
+const compressing = ref(false)
+const originalSize = ref(0)
+const compressedSize = ref(0)
+
+const { isOnline, isSlow } = useNetworkStatus()
+const { progress, isUploading, formatSpeed, start, update, complete, reset: resetProgress } = useUploadProgress()
+
 const { softIn, softOut, ctaIn, ctaOut, delHoverIn, delHoverOut } = useHoverIntents()
+
+// Watch network status
+watchEffect(() => {
+  if (!isOnline.value) {
+    showToast('⚠️ You are offline', false)
+  } else if (isSlow.value && uploading.value) {
+    showToast('⚠️ Slow connection detected', false)
+  }
+})
 
 const bgAssets = computed(() => (assets.value as any[])?.filter(a => a.type === 'background') || [])
 const logoAssets = computed(() => (assets.value as any[])?.filter(a => a.type === 'logo') || [])
@@ -470,47 +530,281 @@ function onUploadClick() {
 function closeUploadModal() {
   showUploadModal.value = false
   selectedFile.value = null
+  validationError.value = ''
+  resetProgress()
+  compressing.value = false
+  originalSize.value = 0
+  compressedSize.value = 0
 }
 
 function triggerFileInput() {
   fileInput.value?.click()
 }
 
-function onFileChange(e: Event) {
+async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
-  selectedFile.value = input.files?.[0] || null
+  const file = input.files?.[0]
+  if (!file) return
+
+  validationError.value = ''
+  originalSize.value = file.size
+  
+  // Validate based on type
+  if (activeTab.value === 'fonts') {
+    const result = validateFont(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ['.ttf', '.otf', '.woff', '.woff2']
+    })
+    if (!result.valid) {
+      validationError.value = result.error || 'Invalid font file'
+      selectedFile.value = null
+      input.value = ''
+      return
+    }
+  } else {
+    const result = await validateImage(file, {
+      maxSize: 10 * 1024 * 1024, // 10MB
+      maxWidth: 4096,
+      maxHeight: 4096,
+      allowedTypes: ['image/png', 'image/jpeg', 'image/jpg']
+    })
+    if (!result.valid) {
+      validationError.value = result.error || 'Invalid image file'
+      selectedFile.value = null
+      input.value = ''
+      return
+    }
+  }
+  
+  selectedFile.value = file
 }
 
-function onDrop(e: DragEvent) {
-  selectedFile.value = e.dataTransfer?.files?.[0] || null
+async function onDrop(e: DragEvent) {
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  
+  validationError.value = ''
+  originalSize.value = file.size
+  
+  // Validate
+  if (activeTab.value === 'fonts') {
+    const result = validateFont(file)
+    if (!result.valid) {
+      validationError.value = result.error || 'Invalid font file'
+      return
+    }
+  } else {
+    const result = await validateImage(file)
+    if (!result.valid) {
+      validationError.value = result.error || 'Invalid image file'
+      return
+    }
+  }
+  
+  selectedFile.value = file
 }
 
 async function confirmUpload() {
   if (!selectedFile.value) return
+  
+  validationError.value = ''
   uploading.value = true
+  resetProgress()
+
   try {
-    if (activeTab.value === 'fonts') {
-      const formData = new FormData()
-      formData.append('files', selectedFile.value)
-      formData.append('fontFamily', fontFamilyInput.value.trim() || selectedFile.value.name.replace(/\.[^.]+$/, ''))
-      await $fetch('/api/fonts', { method: 'POST', body: formData })
-      refreshFonts()
-    } else {
-      const formData = new FormData()
-      formData.append('file', selectedFile.value)
-      formData.append('type', uploadType.value)
-      await $fetch('/api/assets', { method: 'POST', body: formData })
-      refreshAssets()
+    let fileToUpload = selectedFile.value
+
+    // Compress images before upload (not fonts)
+    if (activeTab.value !== 'fonts') {
+      compressing.value = true
+      try {
+        // Detect if image has transparency
+        const hasTransparency = await checkImageTransparency(selectedFile.value)
+        
+        // Preserve PNG for transparent images, convert others to JPEG
+        const format = hasTransparency ? 'image/png' : 'image/jpeg'
+        const quality = hasTransparency ? 0.95 : 0.85 // PNG uses higher quality
+        
+        fileToUpload = await compressImage(selectedFile.value, {
+          maxWidth: 2048,
+          maxHeight: 2048,
+          quality,
+          format
+        })
+        compressedSize.value = fileToUpload.size
+        compressing.value = false
+        
+        const savings = Math.round((1 - fileToUpload.size / selectedFile.value.size) * 100)
+        if (savings > 10) {
+          showToast(`Compressed ${formatBytesUtil(selectedFile.value.size)} → ${formatBytesUtil(fileToUpload.size)} (${savings}% smaller)`)
+        }
+      } catch (compressionError) {
+        console.warn('Compression failed, uploading original:', compressionError)
+        fileToUpload = selectedFile.value
+        compressing.value = false
+      }
     }
+
+    start(fileToUpload.size)
+
+    // Upload with retry logic
+    await retry(
+      () => uploadWithProgress(fileToUpload),
+      {
+        maxRetries: 3,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        onRetry: (attempt, error) => {
+          showToast(`Retrying upload (${attempt}/3)...`, false)
+          console.warn(`Upload retry ${attempt}:`, error)
+        }
+      }
+    )
+
+    complete()
+    
+    // Refresh data
+    if (activeTab.value === 'fonts') {
+      await refreshFonts()
+    } else {
+      await refreshAssets()
+    }
+    
     showUploadModal.value = false
     selectedFile.value = null
     fontFamilyInput.value = ''
-    showToast('File uploaded successfully!')
-  } catch (e) {
-    showToast('Upload failed: ' + ((e as any)?.data?.message || (e as Error).message), false)
+    showToast('✓ File uploaded successfully!')
+  } catch (e: any) {
+    resetProgress()
+    const errorMsg = e?.data?.message || e?.message || 'Upload failed'
+    validationError.value = errorMsg
+    showToast(`❌ ${errorMsg}`, false)
   } finally {
     uploading.value = false
+    compressing.value = false
   }
+}
+
+function uploadWithProgress(file: File): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    const formData = new FormData()
+
+    if (activeTab.value === 'fonts') {
+      formData.append('files', file)
+      formData.append('fontFamily', fontFamilyInput.value.trim() || file.name.replace(/\.[^.]+$/, ''))
+    } else {
+      formData.append('file', file)
+      formData.append('type', uploadType.value)
+    }
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        update(e.loaded, e.total)
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText))
+        } catch {
+          resolve(xhr.responseText)
+        }
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`))
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload cancelled'))
+    })
+
+    const endpoint = activeTab.value === 'fonts' ? '/api/fonts' : '/api/assets'
+    xhr.open('POST', endpoint)
+    xhr.send(formData)
+  })
+}
+
+// Check if image has transparent pixels
+async function checkImageTransparency(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Non-PNG files don't have transparency
+    if (!file.type.includes('png')) {
+      resolve(false)
+      return
+    }
+
+    const img = new Image()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      resolve(false)
+      return
+    }
+
+    img.onload = () => {
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
+
+      try {
+        // Sample pixels to check for transparency
+        // Check corners and center for performance
+        const samplePoints = [
+          { x: 0, y: 0 },
+          { x: img.width - 1, y: 0 },
+          { x: 0, y: img.height - 1 },
+          { x: img.width - 1, y: img.height - 1 },
+          { x: Math.floor(img.width / 2), y: Math.floor(img.height / 2) }
+        ]
+
+        for (const point of samplePoints) {
+          const pixel = ctx.getImageData(point.x, point.y, 1, 1).data
+          // Check alpha channel (index 3)
+          if (pixel[3] < 255) {
+            resolve(true)
+            URL.revokeObjectURL(img.src)
+            return
+          }
+        }
+
+        // More thorough check: sample 100 random pixels
+        const imageData = ctx.getImageData(0, 0, img.width, img.height)
+        const data = imageData.data
+        const sampleSize = Math.min(100, data.length / 4)
+        
+        for (let i = 0; i < sampleSize; i++) {
+          const randomIndex = Math.floor(Math.random() * (data.length / 4)) * 4
+          // Check alpha channel
+          if (data[randomIndex + 3] < 255) {
+            resolve(true)
+            URL.revokeObjectURL(img.src)
+            return
+          }
+        }
+
+        resolve(false)
+      } catch (error) {
+        console.warn('Transparency check failed:', error)
+        resolve(false)
+      }
+
+      URL.revokeObjectURL(img.src)
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      resolve(false)
+    }
+
+    img.src = URL.createObjectURL(file)
+  })
 }
 
 function useInEditor() {
@@ -585,11 +879,7 @@ function showToast(msg: string, ok = true) {
 }
 
 function formatBytes(bytes: number) {
-  if (!bytes || bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 10) / 10 + ' ' + sizes[i]
+  return formatBytesUtil(bytes)
 }
 
 function formatDate(date: any) {
@@ -946,7 +1236,10 @@ onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
   border: 2px dashed rgba(20,17,14,0.18); border-radius: 16px;
   padding: 40px 24px; text-align: center; cursor: pointer;
   background: var(--al-cream);
+  transition: border-color .2s, background .2s;
 }
+.al-dropzone:hover { border-color: var(--al-accent); background: #FFF8F6; }
+.al-dropzone--error { border-color: #DC3545; background: rgba(220,53,69,0.04); }
 .al-dropzone-icon {
   display: grid; place-items: center; width: 52px; height: 52px;
   border-radius: 14px; background: #fff;
@@ -956,6 +1249,59 @@ onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
 .al-dropzone-sub { font-size: 13px; color: var(--al-muted); margin-top: 6px; }
 .al-dropzone-link { color: var(--al-accent); font-weight: 600; cursor: pointer; }
 .al-dropzone-accept { font-size: 12px; color: var(--al-muted); margin-top: 10px; }
+.al-dropzone-info {
+  margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--al-line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.al-info-item {
+  display: flex; justify-content: space-between; font-size: 12.5px;
+}
+.al-info-item span:first-child { color: var(--al-muted); }
+.al-info-item span:last-child { font-weight: 600; }
+.al-info-compressed { color: #1F8A5B; }
+.al-info-compressed span:last-child { color: #1F8A5B; }
+
+.al-validation-error {
+  display: flex; align-items: center; gap: 9px;
+  background: rgba(220,53,69,0.07); border: 1px solid rgba(220,53,69,0.22);
+  border-radius: 10px; padding: 11px 14px; margin-top: 12px;
+  font-size: 13.5px; color: #B91C2E;
+}
+
+.al-compression-status {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(31,138,91,0.08); border: 1px solid rgba(31,138,91,0.18);
+  border-radius: 10px; padding: 11px 14px; margin-top: 12px;
+  font-size: 13.5px; color: #1F8A5B; font-weight: 500;
+}
+.al-compression-spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(31,138,91,0.2);
+  border-top-color: #1F8A5B;
+  animation: spin 0.6s linear infinite;
+}
+
+.al-upload-progress {
+  margin-top: 12px;
+}
+.al-progress-bar-wrap {
+  height: 7px; border-radius: 6px; background: rgba(20,17,14,0.08);
+  overflow: hidden;
+}
+.al-progress-bar-fill {
+  height: 100%; background: var(--al-accent); border-radius: 6px;
+  transition: width 0.3s ease;
+}
+.al-progress-info {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; font-size: 12.5px;
+}
+.al-progress-info span:first-child { font-weight: 600; color: var(--al-ink); }
+.al-progress-speed { color: var(--al-muted); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .al-file-hidden { display: none; }
 .al-modal-footer { margin-top: 16px; display: flex; gap: 9px; }
 .al-modal-cancel {
