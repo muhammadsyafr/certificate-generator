@@ -390,7 +390,9 @@ const fonts = ref<any[]>([]);
 async function refreshAssets() {
   try {
     const { get } = useApi();
-    assets.value = await get('/api/assets');
+    const newAssets = await get('/api/assets');
+    console.log('[refreshAssets] Fetched assets:', newAssets.length);
+    assets.value = newAssets;
   } catch (err) {
     console.error('Failed to load assets:', err);
   }
@@ -473,11 +475,15 @@ const rawAssets = computed(() => {
   return []
 })
 
+const runtimeConfig = useRuntimeConfig();
+const apiBaseUrl = runtimeConfig.public.apiBaseUrl || 'http://localhost:4000';
+
 const filteredAssets = computed(() => {
   let list = rawAssets.value.map((a: any) => {
     if (activeTab.value === 'backgrounds') {
       return {
         ...a,
+        filepath: a.filepath ? `${apiBaseUrl}/uploads/${a.filepath}` : null,
         _name: a.filename || a.name || 'Background',
         _meta: `PNG · ${formatBytes(a.metadata?.size || 0)}`,
         _size: formatBytes(a.metadata?.size || 0),
@@ -491,6 +497,7 @@ const filteredAssets = computed(() => {
     if (activeTab.value === 'logos') {
       return {
         ...a,
+        filepath: a.filepath ? `${apiBaseUrl}/uploads/${a.filepath}` : null,
         _name: a.filename || 'Logo',
         _meta: `PNG · ${formatBytes(a.metadata?.size || 0)}`,
         _size: formatBytes(a.metadata?.size || 0),
@@ -503,6 +510,7 @@ const filteredAssets = computed(() => {
     if (activeTab.value === 'free-images') {
       return {
         ...a,
+        filepath: a.filepath ? `${apiBaseUrl}/uploads/${a.filepath}` : null,
         _name: a.filename || 'Free Image',
         _meta: `PNG · ${formatBytes(a.metadata?.size || 0)}`,
         _size: formatBytes(a.metadata?.size || 0),
@@ -781,7 +789,14 @@ function uploadWithProgress(file: File): Promise<any> {
     })
 
     const endpoint = activeTab.value === 'fonts' ? '/api/fonts' : '/api/assets'
-    xhr.open('POST', endpoint)
+    xhr.open('POST', `${apiBaseUrl}${endpoint}`)
+    
+    // Add auth token
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    }
+    
     xhr.send(formData)
   })
 }

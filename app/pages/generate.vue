@@ -183,11 +183,19 @@ const route = useRoute()
 const templates = ref<any[]>([]);
 const fonts = ref<any[]>([]);
 
+const runtimeConfig = useRuntimeConfig();
+const apiBaseUrl = runtimeConfig.public.apiBaseUrl || 'http://localhost:4000';
+
 async function loadData() {
   try {
     const { get } = useApi();
     templates.value = await get('/api/templates');
-    fonts.value = await get('/api/fonts');
+    
+    const rawFonts = await get('/api/fonts');
+    fonts.value = rawFonts.map((f: any) => ({
+      ...f,
+      filepath: f.filepath ? `${apiBaseUrl}/uploads/${f.filepath}` : null
+    }));
   } catch (err) {
     console.error('Failed to load data:', err);
   }
@@ -233,7 +241,7 @@ const templatePlaceholders = computed(() => {
   const template = templates.value.find(t => t.id === selectedTemplateId.value)
   if (!template) return []
   try {
-    const layout = JSON.parse(template.layout)
+    const layout = typeof template.layout === 'string' ? JSON.parse(template.layout) : template.layout
     const placeholders = new Set<string>()
     ;(layout.elements || []).forEach((el: any) => {
       const content = el.content || el.text || ''
@@ -307,7 +315,7 @@ async function generateBulk() {
     const { get } = useApi();
     const zip = new JSZip()
     const template = await get(`/api/templates/${selectedTemplateId.value}`)
-    const layout = JSON.parse(template.layout)
+    const layout = typeof template.layout === 'string' ? JSON.parse(template.layout) : template.layout
     for (let i = 0; i < data.value.length; i++) {
       const blob = await renderCertificate(layout, data.value[i], outputFormat.value)
       const ext = outputFormat.value === 'pdf' ? 'pdf' : 'png'
@@ -326,15 +334,54 @@ async function generateBulk() {
   } catch (e) { generating.value = false; generationDone.value = false; alert('Generation failed: ' + (e as Error).message) }
 }
 
+// Normalize asset path: strip old full URL if present, rebuild with current apiBaseUrl
+function normalizeAssetPath(path: string): string {
+  if (!path) return path;
+  // Skip data URIs (inline SVG)
+  if (path.startsWith('data:')) return path;
+  // Strip old full URL prefix if present
+  const uploadsMatch = path.match(/https?:\/\/[^/]+\/uploads\/(.+)/);
+  if (uploadsMatch) {
+    return `${apiBaseUrl}/uploads/${uploadsMatch[1]}`;
+  }
+  // If already starts with current apiBaseUrl, keep as-is
+  if (path.startsWith(apiBaseUrl)) return path;
+  // If relative path, prepend current apiBaseUrl
+  if (!path.startsWith('http')) {
+    return `${apiBaseUrl}/uploads/${path}`;
+  }
+  // Other absolute URLs (external), keep as-is
+  return path;
+}
+
 async function renderCertificate(layout: any, record: Record<string, any>, format: 'pdf' | 'png'): Promise<Blob> {
+  console.log('=== renderCertificate DEBUG ===')
+  console.log('layout.background:', layout.background)
+  console.log('layout.elements:', layout.elements?.map((el: any) => ({ kind: el.kind, src: el.src, filepath: el.filepath })))
+  
   const presets: Record<string, any> = { standard: { scale: 1, jpeg: 0.75 }, high: { scale: 1.5, jpeg: 0.85 }, maximum: { scale: 2, jpeg: 0.95 } }
   const preset = presets[quality.value]
   const container = document.createElement('div')
-  container.style.cssText = `position:absolute;left:-9999px;width:${layout.width}px;height:${layout.height}px;background:#fff`
+  container.style.cssText = `position:absolute;left:-9999px;width:${layout.width}px;height:${layout.height}px;background:${layout.backgroundColor || '#fff'}`
   document.body.appendChild(container)
+  
+  const imagesToLoad: Promise<any>[] = []
+  const imageElements: { img: HTMLImageElement; containerW: number; containerH: number }[] = []
+  
+  // Background image - load before appending
   if (layout.background) {
-    const bg = document.createElement('img'); bg.src = layout.background
-    bg.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute'
+    const bg = document.createElement('img');
+    const normalizedBg = normalizeAssetPath(layout.background)
+    console.log('background normalized:', normalizedBg)
+    bg.style.cssText = 'width:100%;height:100%;object-fit:contain;position:absolute'
+    
+    const bgPromise = new Promise((resolve, reject) => {
+      bg.onload = () => resolve(true)
+      bg.onerror = () => reject(new Error(`Background failed: ${normalizedBg}`))
+      setTimeout(() => reject(new Error(`Background timeout: ${normalizedBg}`)), 10000)
+      bg.src = normalizedBg
+    })
+    imagesToLoad.push(bgPromise)
     container.appendChild(bg)
   }
   for (const el of (layout.elements || [])) {
@@ -343,18 +390,39 @@ async function renderCertificate(layout: any, record: Record<string, any>, forma
     if (el.type === 'text' || el.kind === 'text' || el.kind === 'field') {
       let content = el.content || el.text || ''
       for (const [k, v] of Object.entries(record)) content = content.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
-      div.textContent = content
-      div.style.fontFamily = el.fontFamily || el.font || 'serif'
-      div.style.fontSize = (el.fontSize || el.size || 24) + 'px'
-      div.style.color = el.color || '#000'
-      div.style.fontWeight = el.fontWeight || el.weight || '400'
-      div.style.fontStyle = el.fontStyle || (el.italic ? 'italic' : 'normal')
-      div.style.textAlign = el.textAlign || el.align || 'left'
-      div.style.letterSpacing = (el.letterSpacing || el.letter || 0) + 'px'
-      div.style.opacity = String((el.opacity || 100) / 100)
+      const textDiv = document.createElement('div')
+      textDiv.textContent = content
+      textDiv.style.fontFamily = el.fontFamily || el.font || 'serif'
+      textDiv.style.fontSize = (el.fontSize || el.size || 24) + 'px'
+      textDiv.style.color = el.color || '#000'
+      textDiv.style.fontWeight = el.fontWeight || el.weight || '400'
+      textDiv.style.fontStyle = el.fontStyle || (el.italic ? 'italic' : 'normal')
+      textDiv.style.textAlign = el.textAlign || el.align || 'left'
+      textDiv.style.letterSpacing = (el.letterSpacing || el.letter || 0) + 'px'
+      textDiv.style.opacity = String((el.opacity || 100) / 100)
+      textDiv.style.display = 'flex'
+      textDiv.style.alignItems = 'center'
+      textDiv.style.justifyContent = el.textAlign === 'left' || el.align === 'left' ? 'flex-start' : el.textAlign === 'right' || el.align === 'right' ? 'flex-end' : 'center'
+      textDiv.style.width = '100%'
+      textDiv.style.height = '100%'
+      textDiv.style.lineHeight = '1.25'
+      div.appendChild(textDiv)
     } else if ((el.type === 'image' || el.kind === 'image') && (el.src || el.filepath)) {
-      const img = document.createElement('img'); img.src = el.src || el.filepath
-      img.style.cssText = 'width:100%;height:100%;object-fit:contain'
+      const img = document.createElement('img');
+      const imgSrc = el.src || el.filepath;
+      const normalizedSrc = normalizeAssetPath(imgSrc)
+      console.log('image element:', { original: imgSrc, normalized: normalizedSrc })
+      img.style.display = 'block'
+      const containerW = el.width || el.w
+      const containerH = el.height || el.h
+      const imgPromise = new Promise((resolve, reject) => {
+        img.onload = () => resolve(true)
+        img.onerror = () => reject(new Error(`Image failed: ${normalizedSrc}`))
+        setTimeout(() => reject(new Error(`Image timeout: ${normalizedSrc}`)), 10000)
+        img.src = normalizedSrc
+      })
+      imagesToLoad.push(imgPromise)
+      imageElements.push({ img, containerW, containerH })
       div.appendChild(img)
     } else if (el.kind === 'bar' || el.kind === 'shape') {
       div.style.background = el.color || '#000'
@@ -364,8 +432,42 @@ async function renderCertificate(layout: any, record: Record<string, any>, forma
     }
     container.appendChild(div)
   }
-  await new Promise(r => setTimeout(r, 100))
-  const canvas = await html2canvas(container, { backgroundColor: '#ffffff', scale: preset.scale })
+  
+  // Wait for all images to load
+  console.log(`Waiting for ${imagesToLoad.length} images to load...`)
+  try {
+    await Promise.all(imagesToLoad)
+    console.log('All images loaded successfully')
+  } catch (err) {
+    console.error('Image loading error:', err)
+  }
+
+  // Manual object-fit:contain — compute exact px size/pos to avoid html2canvas quirks
+  for (const { img, containerW, containerH } of imageElements) {
+    if (!img.naturalWidth || !img.naturalHeight) continue
+    const nw = img.naturalWidth
+    const nh = img.naturalHeight
+    const scale = Math.min(containerW / nw, containerH / nh)
+    const rw = Math.round(nw * scale)
+    const rh = Math.round(nh * scale)
+    const ox = Math.round((containerW - rw) / 2)
+    const oy = Math.round((containerH - rh) / 2)
+    img.style.position = 'absolute'
+    img.style.left = ox + 'px'
+    img.style.top = oy + 'px'
+    img.style.width = rw + 'px'
+    img.style.height = rh + 'px'
+  }
+  
+  // Extra wait for render
+  await new Promise(r => setTimeout(r, 300))
+  const canvas = await html2canvas(container, { 
+    backgroundColor: '#ffffff', 
+    scale: preset.scale,
+    useCORS: true,
+    allowTaint: false,
+    logging: true
+  })
   document.body.removeChild(container)
   if (format === 'png') {
     return new Promise(resolve => canvas.toBlob(b => resolve(b!), 'image/jpeg', preset.jpeg))

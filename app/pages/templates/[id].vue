@@ -179,11 +179,11 @@
         </div>
 
         <div class="ed-section-label" style="margin-top:16px">Preset Borders</div>
-        <div class="ed-bg-picker">
+        <div class="ed-bg-picker ed-bg-picker--scroll">
           <button
             v-for="border in presetBorders"
             :key="border.id"
-            class="ed-bg-thumb ed-bg-thumb--border"
+            class="ed-bg-thumb ed-bg-thumb--border ed-bg-thumb--fixed"
             :class="{ active: selectedBorderId === border.id }"
             @click="applyPresetBorder(border)"
             :style="{ background: border.bg, backgroundSize: 'cover' }"
@@ -195,6 +195,15 @@
               </svg>
             </span>
           </button>
+        </div>
+        <div class="ed-bg-color-row">
+          <input
+            type="color"
+            :value="borderColor"
+            @input="borderColor = ($event.target as HTMLInputElement).value; selectedBorderId ? applyPresetBorder(presetBorders.find(b => b.id === selectedBorderId)!) : null"
+            class="ed-bg-color-pick"
+          />
+          <span class="ed-bg-color-label">Border color</span>
         </div>
         <div class="ed-bg-color-row">
           <input
@@ -355,6 +364,35 @@
               <div>
                 <div class="prop-name">{{ selectedEl.label || selectedEl.id }}</div>
                 <div class="prop-kind">{{ kindLabel(selectedEl) }}</div>
+              </div>
+            </div>
+
+            <!-- Position & Size (all elements) -->
+            <div class="ed-prop-section">
+              <div class="prop-label">Position & Size</div>
+              <div class="ed-dim-grid">
+                <div class="ed-dim-field">
+                  <label class="ed-dim-label">X</label>
+                  <input type="number" :value="selectedEl.x" @input="patchSel({ x: +($event.target as HTMLInputElement).value })" class="ed-dim-input" />
+                </div>
+                <div class="ed-dim-field">
+                  <label class="ed-dim-label">Y</label>
+                  <input type="number" :value="selectedEl.y" @input="patchSel({ y: +($event.target as HTMLInputElement).value })" class="ed-dim-input" />
+                </div>
+                <div class="ed-dim-field">
+                  <label class="ed-dim-label">W</label>
+                  <input type="number" :value="selectedEl.w" @input="onDimInput('w', +($event.target as HTMLInputElement).value)" class="ed-dim-input" />
+                </div>
+                <div class="ed-dim-field">
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <label class="ed-dim-label">H</label>
+                    <button v-if="selectedEl.kind === 'image'" class="ed-lock-btn" :class="{ 'ed-lock-btn--locked': isAspectLocked(selectedEl.id) }" @click="toggleAspectLock(selectedEl.id)" title="Lock aspect ratio">
+                      <svg v-if="isAspectLocked(selectedEl.id)" width="10" height="10" viewBox="0 0 24 24" fill="none"><rect x="6" y="10" width="12" height="10" rx="2" stroke="currentColor" stroke-width="2"/><rect x="10" y="6" width="4" height="6" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+                      <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none"><rect x="6" y="10" width="12" height="10" rx="2" stroke="currentColor" stroke-width="2"/><rect x="10" y="6" width="4" height="6" rx="1" stroke="currentColor" stroke-width="2"/><path d="M15 2h6v6M9 22H3v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <input type="number" :value="selectedEl.h" @input="onDimInput('h', +($event.target as HTMLInputElement).value)" class="ed-dim-input" />
+                </div>
               </div>
             </div>
 
@@ -660,11 +698,25 @@ const lastSavedAt = ref<Date | null>(null);
 const assets = ref<any[]>([]);
 const fonts = ref<any[]>([]);
 
+const runtimeConfig = useRuntimeConfig();
+const apiBaseUrl = runtimeConfig.public.apiBaseUrl || 'http://localhost:4000';
+
 async function loadAssets() {
   try {
     const { get } = useApi();
-    assets.value = await get('/api/assets');
-    fonts.value = await get('/api/fonts');
+    const rawAssets = await get('/api/assets');
+    const rawFonts = await get('/api/fonts');
+    
+    // Prepend base URL to filepath
+    assets.value = rawAssets.map((a: any) => ({
+      ...a,
+      filepath: a.filepath ? `${apiBaseUrl}/uploads/${a.filepath}` : null
+    }));
+    
+    fonts.value = rawFonts.map((f: any) => ({
+      ...f,
+      filepath: f.filepath ? `${apiBaseUrl}/uploads/${f.filepath}` : null
+    }));
   } catch (err) {
     console.error('Failed to load assets:', err);
   }
@@ -739,35 +791,68 @@ const customW = ref(842);
 const customH = ref(595);
 
 const selectedBorderId = ref<string | null>(null);
+const borderColor = ref('#14110E');
 
-const presetBorders = [
+type BorderPreset = {
+  id: string;
+  bg: string;
+  preview: string;
+  svg: (w: number, h: number, c: string) => string;
+};
+
+const presetBorders: BorderPreset[] = [
   {
     id: 'none', bg: '#fff',
     preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#f5f5f5"/><line x1="6" y1="20" x2="34" y2="20" stroke="#ccc" stroke-width="1.2" stroke-dasharray="2 2"/></svg>',
-    svg: (w: number, h: number) => '',
+    svg: (_w: number, _h: number, _c: string) => '',
   },
   {
     id: 'simple', bg: '#FFFDF9',
     preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="4" y="4" width="32" height="32" rx="2" stroke="#14110E" stroke-width="1.5"/></svg>',
-    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="4" fill="none" stroke="#14110E" stroke-width="2"/></svg>`,
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="4" fill="none" stroke="${c}" stroke-width="2"/></svg>`,
   },
   {
     id: 'double', bg: '#FFFDF9',
     preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="3" y="3" width="34" height="34" rx="1" stroke="#14110E" stroke-width="1"/><rect x="6" y="6" width="28" height="28" rx="1" stroke="#14110E" stroke-width="0.8"/></svg>',
-    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="10" y="10" width="${w-20}" height="${h-20}" rx="4" fill="none" stroke="#14110E" stroke-width="2"/><rect x="18" y="18" width="${w-36}" height="${h-36}" rx="2" fill="none" stroke="#14110E" stroke-width="1"/></svg>`,
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="10" y="10" width="${w-20}" height="${h-20}" rx="4" fill="none" stroke="${c}" stroke-width="2"/><rect x="18" y="18" width="${w-36}" height="${h-36}" rx="2" fill="none" stroke="${c}" stroke-width="1"/></svg>`,
   },
   {
     id: 'ornate', bg: '#FFFDF9',
     preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="3" y="3" width="34" height="34" rx="2" stroke="#14110E" stroke-width="1"/><circle cx="6" cy="6" r="1.5" fill="#14110E"/><circle cx="34" cy="6" r="1.5" fill="#14110E"/><circle cx="6" cy="34" r="1.5" fill="#14110E"/><circle cx="34" cy="34" r="1.5" fill="#14110E"/></svg>',
-    svg: (w: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="6" fill="none" stroke="#14110E" stroke-width="1.8"/><circle cx="24" cy="24" r="5" fill="#14110E"/><circle cx="${w-24}" cy="24" r="5" fill="#14110E"/><circle cx="24" cy="${h-24}" r="5" fill="#14110E"/><circle cx="${w-24}" cy="${h-24}" r="5" fill="#14110E"/></svg>`,
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="6" fill="none" stroke="${c}" stroke-width="1.8"/><circle cx="24" cy="24" r="5" fill="${c}"/><circle cx="${w-24}" cy="24" r="5" fill="${c}"/><circle cx="24" cy="${h-24}" r="5" fill="${c}"/><circle cx="${w-24}" cy="${h-24}" r="5" fill="${c}"/></svg>`,
   },
   {
     id: 'minimal', bg: '#FFFDF9',
     preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><line x1="4" y1="4" x2="12" y2="4" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="4" x2="4" y2="12" stroke="#14110E" stroke-width="1.5"/><line x1="28" y1="4" x2="36" y2="4" stroke="#14110E" stroke-width="1.5"/><line x1="36" y1="4" x2="36" y2="12" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="28" x2="4" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="4" y1="36" x2="12" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="28" y1="36" x2="36" y2="36" stroke="#14110E" stroke-width="1.5"/><line x1="36" y1="28" x2="36" y2="36" stroke="#14110E" stroke-width="1.5"/></svg>',
-    svg: (w: number, h: number) => {
+    svg: (w: number, h: number, c: string) => {
       const l = 16, s = 40;
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><line x1="${l}" y1="${l}" x2="${s}" y2="${l}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${l}" x2="${l}" y2="${s}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-s}" y2="${l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-l}" y2="${s}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${l}" y2="${h-s}" stroke="#14110E" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${s}" y2="${h-l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-s}" y2="${h-l}" stroke="#14110E" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-l}" y2="${h-s}" stroke="#14110E" stroke-width="2"/></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><line x1="${l}" y1="${l}" x2="${s}" y2="${l}" stroke="${c}" stroke-width="2"/><line x1="${l}" y1="${l}" x2="${l}" y2="${s}" stroke="${c}" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-s}" y2="${l}" stroke="${c}" stroke-width="2"/><line x1="${w-l}" y1="${l}" x2="${w-l}" y2="${s}" stroke="${c}" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${l}" y2="${h-s}" stroke="${c}" stroke-width="2"/><line x1="${l}" y1="${h-l}" x2="${s}" y2="${h-l}" stroke="${c}" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-s}" y2="${h-l}" stroke="${c}" stroke-width="2"/><line x1="${w-l}" y1="${h-l}" x2="${w-l}" y2="${h-s}" stroke="${c}" stroke-width="2"/></svg>`;
     },
+  },
+  {
+    id: 'framed', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="2" y="2" width="36" height="36" rx="1" stroke="#14110E" stroke-width="2.5"/><rect x="6" y="6" width="28" height="28" rx="0.5" stroke="#14110E" stroke-width="0.5"/></svg>',
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="8" y="8" width="${w-16}" height="${h-16}" rx="3" fill="none" stroke="${c}" stroke-width="3"/><rect x="16" y="16" width="${w-32}" height="${h-32}" fill="none" stroke="${c}" stroke-width="0.8" stroke-dasharray="6 4"/></svg>`,
+  },
+  {
+    id: 'thick', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="5" y="5" width="30" height="30" rx="2" stroke="#14110E" stroke-width="3"/></svg>',
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="10" y="10" width="${w-20}" height="${h-20}" rx="5" fill="none" stroke="${c}" stroke-width="4"/></svg>`,
+  },
+  {
+    id: 'scalloped', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="3" y="3" width="34" height="34" rx="2" stroke="#14110E" stroke-width="1"/><circle cx="8" cy="8" r="1.2" fill="#14110E"/><circle cx="20" cy="8" r="1.2" fill="#14110E"/><circle cx="32" cy="8" r="1.2" fill="#14110E"/><circle cx="32" cy="20" r="1.2" fill="#14110E"/><circle cx="32" cy="32" r="1.2" fill="#14110E"/><circle cx="20" cy="32" r="1.2" fill="#14110E"/><circle cx="8" cy="32" r="1.2" fill="#14110E"/><circle cx="8" cy="20" r="1.2" fill="#14110E"/></svg>',
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" rx="8" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="32" cy="32" r="4" fill="${c}"/><circle cx="${w-32}" cy="32" r="4" fill="${c}"/><circle cx="32" cy="${h-32}" r="4" fill="${c}"/><circle cx="${w-32}" cy="${h-32}" r="4" fill="${c}"/><circle cx="${Math.round(w/2)}" cy="32" r="4" fill="${c}"/><circle cx="32" cy="${Math.round(h/2)}" r="4" fill="${c}"/><circle cx="${w-32}" cy="${Math.round(h/2)}" r="4" fill="${c}"/><circle cx="${Math.round(w/2)}" cy="${h-32}" r="4" fill="${c}"/></svg>`,
+  },
+  {
+    id: 'geometric', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="4" y="4" width="32" height="32" rx="1" stroke="#14110E" stroke-width="1"/><polygon points="20,10 22,18 30,20 22,22 20,30 18,22 10,20 18,18" fill="#14110E"/></svg>',
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="12" y="12" width="${w-24}" height="${h-24}" fill="none" stroke="${c}" stroke-width="1.5"/><line x1="20" y1="20" x2="50" y2="20" stroke="${c}" stroke-width="1.5"/><line x1="20" y1="20" x2="20" y2="50" stroke="${c}" stroke-width="1.5"/><line x1="${w-20}" y1="20" x2="${w-50}" y2="20" stroke="${c}" stroke-width="1.5"/><line x1="${w-20}" y1="20" x2="${w-20}" y2="50" stroke="${c}" stroke-width="1.5"/><line x1="20" y1="${h-20}" x2="50" y2="${h-20}" stroke="${c}" stroke-width="1.5"/><line x1="20" y1="${h-20}" x2="20" y2="${h-50}" stroke="${c}" stroke-width="1.5"/><line x1="${w-20}" y1="${h-20}" x2="${w-50}" y2="${h-20}" stroke="${c}" stroke-width="1.5"/><line x1="${w-20}" y1="${h-20}" x2="${w-20}" y2="${h-50}" stroke="${c}" stroke-width="1.5"/></svg>`,
+  },
+  {
+    id: 'vintage', bg: '#FFFDF9',
+    preview: '<svg viewBox="0 0 40 40" fill="none"><rect x="0" y="0" width="40" height="40" fill="#FFFDF9"/><rect x="4" y="4" width="32" height="32" rx="2" stroke="#14110E" stroke-width="0.8"/><rect x="7" y="7" width="26" height="26" rx="1" stroke="#14110E" stroke-width="0.5"/></svg>',
+    svg: (w: number, h: number, c: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect x="8" y="8" width="${w-16}" height="${h-16}" rx="6" fill="none" stroke="${c}" stroke-width="1.2"/><rect x="16" y="16" width="${w-32}" height="${h-32}" rx="4" fill="none" stroke="${c}" stroke-width="0.6"/></svg>`,
   },
 ];
 
@@ -777,7 +862,7 @@ function applyPresetBorder(border: typeof presetBorders[0]) {
     selectedBorderId.value = null;
     return;
   }
-  const svg = border.svg(layout.width, layout.height);
+  const svg = border.svg(layout.width, layout.height, borderColor.value);
   layout.background = 'data:image/svg+xml,' + encodeURIComponent(svg);
   selectedBorderId.value = border.id;
 }
@@ -1123,6 +1208,20 @@ let resizeState: { id: string; dir: string; sx: number; sy: number; ox: number; 
 const dragDelta = reactive({ x: 0, y: 0 });
 const showCenterGuides = ref(false);
 const shiftHeld = ref(false);
+const aspectLocks = reactive<Record<string, boolean>>({});
+function isAspectLocked(id: string): boolean { return aspectLocks[id] ?? false; }
+function toggleAspectLock(id: string) { aspectLocks[id] = !isAspectLocked(id); }
+function onDimInput(dim: 'w' | 'h', val: number) {
+  const el = selectedEl.value;
+  if (!el) return;
+  if (el.kind === 'image' && isAspectLocked(el.id)) {
+    const ratio = el.w / el.h;
+    if (dim === 'w') patchSel({ w: val, h: Math.round(val / ratio) });
+    else patchSel({ h: val, w: Math.round(val * ratio) });
+  } else {
+    patchSel({ [dim]: val });
+  }
+}
 const undoStack = ref<EdElement[][]>([]);
 const redoStack = ref<EdElement[][]>([]);
 const MAX_HISTORY = 50;
@@ -1212,7 +1311,9 @@ function onPointerMove(e: PointerEvent) {
     const { dir, ox, oy, ow, oh } = resizeState;
     const ratio = ow / oh;
     let nx = ox, ny = oy, nw = ow, nh = oh;
-    if (shiftHeld.value && dir.length === 2) {
+    const el = elements.value.find(x => x.id === resizeState!.id);
+    const useLock = (shiftHeld.value || el?.kind === 'image') && dir.length === 2;
+    if (useLock) {
       // corner resize with proportional lock
       const adx = Math.abs(dx); const ady = Math.abs(dy);
       if (adx > ady || dir === 'nw' || dir === 'se') {
@@ -1330,23 +1431,22 @@ onMounted(async () => {
           layout.height = saved.height || 595;
           syncCanvasSize();
           layout.backgroundColor = saved.backgroundColor || '#ffffff';
-          layout.background = saved.background || '';
+          // Prepend base URL to background if it's a relative path
+          const bg = saved.background || '';
+          layout.background = bg && !bg.startsWith('http') ? `${apiBaseUrl}/uploads/${bg}` : bg;
           if (saved.elements && Array.isArray(saved.elements)) {
-            // calculate scale factor if saved layout dimensions differ from editor stage (842×595)
-            const sx = 842 / (saved.width || 842);
-            const sy = 595 / (saved.height || 595);
-            const useScale = saved.width !== 842 || saved.height !== 595;
             elements.value = saved.elements.map((e: any, i: number) => {
               const el = oldElToEd(e, e.id || 'loaded_' + i);
-              if (useScale) {
-                el.x = Math.round(el.x * sx);
-                el.y = Math.round(el.y * sy);
-                el.w = Math.round(el.w * sx);
-                el.h = Math.round(el.h * sy);
+              // Prepend base URL to image src if it's a relative path
+              if (el.src && !el.src.startsWith('http')) {
+                el.src = `${apiBaseUrl}/uploads/${el.src}`;
               }
               return el;
             });
-            nextId = Math.max(nextId, elements.value.length + 1);
+            nextId = elements.value.reduce((max, el) => {
+              const num = parseInt(String(el.id).replace(/^\D+/g, ''), 10);
+              return isNaN(num) ? max : Math.max(max, num);
+            }, nextId) + 1;
           }
         }
       }
@@ -1372,7 +1472,17 @@ onUnmounted(() => {
 });
 
 // ── Save ──
-async function saveTemplate() {
+// Strip base URL from asset paths before saving to DB
+function stripBaseUrl(path: string): string {
+  if (!path) return path;
+  const prefix = `${apiBaseUrl}/uploads/`;
+  if (path.startsWith(prefix)) {
+    return path.substring(prefix.length);
+  }
+  return path;
+}
+
+async function saveTemplate(silent = false) {
   // Validate template name
   const validation = validateTemplateName(templateName.value);
   if (!validation.valid) {
@@ -1387,25 +1497,18 @@ async function saveTemplate() {
     templateName.value = sanitizedName;
   }
 
-  saving.value = true;
+  if (!silent) saving.value = true;
   saveStatus.value = 'saving';
   
   try {
     const lw = layout.width;
     const lh = layout.height;
-    const stageW = 820;
-    const stageH = 580;
-    const useScale = lw !== stageW || lh !== stageH;
-    const elScaleX = lw / stageW;
-    const elScaleY = lh / stageH;
 
     const savedElements = elements.value.map(el => {
       const old = edElToOld(el);
-      if (useScale) {
-        old.x = Math.round(el.x * elScaleX);
-        old.y = Math.round(el.y * elScaleY);
-        old.width = Math.round(el.w * elScaleX);
-        old.height = Math.round(el.h * elScaleY);
+      // Strip base URL from image src
+      if (old.src) {
+        old.src = stripBaseUrl(old.src);
       }
       return old;
     });
@@ -1415,7 +1518,7 @@ async function saveTemplate() {
       layout: {
         width: lw,
         height: lh,
-        background: layout.background,
+        background: stripBaseUrl(layout.background),
         backgroundColor: layout.backgroundColor,
         elements: savedElements,
       },
@@ -1430,10 +1533,10 @@ async function saveTemplate() {
         await router.replace(`/templates/${result.id}`);
         saveStatus.value = 'saved';
         lastSavedAt.value = new Date();
-        toastMsg('Template saved');
+        if (!silent) toastMsg('Template saved');
         
         // Complete tour when user saves (tour is active and on last step)
-        if (tour.isActive.value && tour.isLastStep.value) {
+        if (!silent && tour.isActive.value && tour.isLastStep.value) {
           setTimeout(() => {
             tour.completeTour();
           }, 500);
@@ -1449,10 +1552,10 @@ async function saveTemplate() {
       await put(`/api/templates/${templateId.value}`, payload);
       saveStatus.value = 'saved';
       lastSavedAt.value = new Date();
-      toastMsg('Template saved');
+      if (!silent) toastMsg('Template saved');
       
       // Complete tour when user saves (tour is active and on last step)
-      if (tour.isActive.value && tour.isLastStep.value) {
+      if (!silent && tour.isActive.value && tour.isLastStep.value) {
         setTimeout(() => {
           tour.completeTour();
         }, 500);
@@ -1462,16 +1565,16 @@ async function saveTemplate() {
     toastMsg('Failed to save: ' + (e as Error).message);
     saveStatus.value = 'unsaved';
   } finally {
-    saving.value = false;
+    if (!silent) saving.value = false;
   }
 }
 
-// Auto-save with debounce (1 second delay)
+// Auto-save with debounce (2 second delay, silent — no toast)
 const autoSave = debounce(async () => {
   if (!isNew.value && templateName.value.trim() && !justCreated.value) {
-    await saveTemplate();
+    await saveTemplate(true);
   }
-}, 1000);
+}, 2000);
 
 // Mark as unsaved when changes occur
 function markUnsaved() {
@@ -1664,7 +1767,8 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 }
 .ed-add-card:hover { border-color: rgba(20,17,14,0.22); transform: translateY(-1px); }
 .ed-add-card.active { border-color: var(--accent); background: rgba(245,82,30,0.04); }
-.ed-bg-picker { margin-top: 12px; display: flex; gap: 9px; }
+.ed-bg-picker { margin-top: 12px; display: flex; gap: 9px; flex-wrap: wrap; }
+.ed-bg-picker--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
 .ed-bg-thumb {
   flex: 1; aspect-ratio: 1.3; border-radius: 10px;
   border: 2px solid var(--line); background: #fff; cursor: pointer; position: relative;
@@ -1672,6 +1776,7 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .ed-bg-thumb.active { border-color: var(--accent); background: linear-gradient(160deg, #fff, #f0e9e2); }
 .ed-bg-thumb.add { border-style: dashed; display: grid; place-items: center; color: var(--muted); }
 .ed-bg-thumb--border { background: #FFFDF9 !important; }
+.ed-bg-thumb--fixed { flex: 0 0 54px; }
 .ed-border-preview { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .ed-border-preview :deep(svg) { width: 100%; height: 100%; }
 .bg-check {
@@ -1881,6 +1986,17 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .pro-tag { background: var(--ink); color: #fff; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 5px; }
 .ed-prop-row { display: flex; gap: 8px; margin-top: 10px; }
 .ed-prop-col { flex: 1; }
+.ed-dim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ed-dim-field { display: flex; flex-direction: column; gap: 3px; }
+.ed-dim-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.ed-dim-input { width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink); box-sizing: border-box; outline: none; }
+.ed-lock-btn {
+  width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer; color: var(--muted); border-radius: 3px; padding: 0;
+  transition: color .15s;
+}
+.ed-lock-btn:hover { background: var(--line); }
+.ed-lock-btn--locked { color: var(--accent); }
 .ed-range-row {
   display: flex; align-items: center; gap: 8px;
   background: #fff; border: 1px solid var(--line); border-radius: 9px;
