@@ -18,9 +18,9 @@
         <NuxtLink to="/generate" class="gr-tab gr-tab--active">Generate</NuxtLink>
       </nav>
       <div class="gr-topbar-actions">
-        <div class="gr-plan-badge">
-          Free plan
-          <a href="/#pricing" class="gr-plan-upgrade">Upgrade</a>
+        <div v-if="user" class="gr-plan-badge">
+          {{ user.plan === 'pro' ? 'Pro' : 'Free' }} plan
+          <a v-if="user.plan !== 'pro'" href="/#pricing" class="gr-plan-upgrade">Upgrade</a>
         </div>
         <SharedUserMenu />
       </div>
@@ -178,6 +178,7 @@ import JSZip from 'jszip'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
+const { user } = useAuth()
 const route = useRoute()
 const templates = ref<any[]>([]);
 const fonts = ref<any[]>([]);

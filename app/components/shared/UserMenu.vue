@@ -10,6 +10,12 @@
           <div class="user-email">{{ user?.email || '' }}</div>
         </div>
         <div class="user-divider"></div>
+        <NuxtLink v-if="isAdmin" to="/admin/users" class="user-item" @click="showMenu = false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          User Management
+        </NuxtLink>
         <button class="user-item" @click="handleLogout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -22,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-const { user, loadUser, logout, getUserInitials } = useAuth()
+const { user, loadUser, logout, getUserInitials, isAdmin } = useAuth()
 const showMenu = ref(false)
 
 function handleLogout() {

@@ -39,8 +39,10 @@
 
             <div class="tp-topbar-actions">
                 <div class="tp-plan-badge">
-                    Free plan · {{ allTemplates.length }}/3 templates
-                    <a href="/#pricing" class="tp-plan-upgrade">Upgrade</a>
+                    <span v-if="user?.plan === 'pro'" class="tp-plan-pro">Pro plan</span>
+                    <span v-else>Free plan</span>
+                    · {{ allTemplates.length }}/{{ maxTemplates }} templates
+                    <a v-if="user?.plan !== 'pro'" href="/#pricing" class="tp-plan-upgrade">Upgrade</a>
                 </div>
                 <button
                     class="tp-btn-new"
@@ -862,10 +864,13 @@
                                         stroke-linecap="round"
                                     />
                                 </svg>
-                                <div>
+                                <div v-if="user?.plan !== 'pro'">
                                     Free plan exports include a small watermark.
                                     <a href="/#pricing">Upgrade to Pro</a> to
                                     remove it.
+                                </div>
+                                <div v-else>
+                                    Pro plan - watermark-free exports.
                                 </div>
                             </div>
                         </div>
@@ -1020,7 +1025,13 @@ const {
     delHoverOut: DEL_OUT,
 } = useHoverIntents();
 
+const { user } = useAuth();
+
 const allTemplates = computed(() => templates.value || []);
+
+const maxTemplates = computed(() => {
+    return user.value?.plan === 'pro' ? 99 : 2;
+});
 
 const gridItems = computed(() => {
     let list = allTemplates.value.map((t, i) => {
@@ -1282,6 +1293,10 @@ onUnmounted(() => {
     font-weight: 600;
     padding: 5px 11px;
     border-radius: 999px;
+}
+.tp-plan-pro {
+    color: var(--tp-accent);
+    font-weight: 600;
 }
 .tp-btn-new {
     border: none;

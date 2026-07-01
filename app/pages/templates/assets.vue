@@ -21,9 +21,9 @@
       </nav>
 
       <div class="al-topbar-actions">
-        <div class="al-plan-badge">
-          Free plan
-          <a href="/#pricing" class="al-plan-upgrade">Upgrade</a>
+        <div v-if="user" class="al-plan-badge">
+          {{ user.plan === 'pro' ? 'Pro' : 'Free' }} plan
+          <a v-if="user.plan !== 'pro'" href="/#pricing" class="al-plan-upgrade">Upgrade</a>
         </div>
         <NuxtLink to="/templates/new" class="al-btn-editor">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l3.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20z" stroke="#14110E" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -92,14 +92,14 @@
           <div class="al-usage-main">
             <div class="al-usage-row">
               <span class="al-usage-title">Storage usage</span>
-              <span class="al-usage-stat">{{ bgAssets.length }} / 1 slot used</span>
+              <span class="al-usage-stat">{{ bgAssets.length }} / {{ maxBackgrounds }} slot{{ maxBackgrounds === 1 ? '' : 's' }} used</span>
             </div>
             <div class="al-usage-bar">
-              <div class="al-usage-fill" :style="{ width: Math.min(bgAssets.length * 100, 100) + '%' }" />
+              <div class="al-usage-fill" :style="{ width: maxBackgrounds === -1 ? '0%' : Math.min((bgAssets.length / maxBackgrounds) * 100, 100) + '%' }" />
             </div>
-            <div class="al-usage-note">Free plan: 1 background slot. Upgrade for unlimited.</div>
+            <div class="al-usage-note">{{ usageNote }}</div>
           </div>
-          <a href="/#pricing" class="al-usage-upgrade">Upgrade for more</a>
+          <a v-if="user?.plan !== 'pro'" href="/#pricing" class="al-usage-upgrade">Upgrade for more</a>
         </div>
 
         <!-- locked -->
@@ -383,6 +383,7 @@
 </template>
 
 <script setup lang="ts">
+const { user } = useAuth()
 const assets = ref<any[]>([]);
 const fonts = ref<any[]>([]);
 
@@ -518,6 +519,17 @@ const filteredAssets = computed(() => {
 })
 
 const selectedAsset = computed(() => filteredAssets.value.find((a: any) => a.id === selectedId.value) || null)
+
+const maxBackgrounds = computed(() => {
+  if (!user.value) return 1
+  return user.value.plan === 'pro' ? 99 : 1
+})
+
+const usageNote = computed(() => {
+  if (!user.value) return 'Free plan: 1 background slot. Upgrade for unlimited.'
+  if (user.value.plan === 'pro') return 'Pro plan: 99 background slots.'
+  return 'Free plan: 1 background slot. Upgrade for unlimited.'
+})
 
 const lockedTitle = computed(() => {
   if (activeTab.value === 'logos') return 'Upload logos with Pro'

@@ -25,10 +25,13 @@ export const useAuth = () => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
 
+  const isAdmin = computed(() => user.value?.isAdmin === true)
+
   return {
     user,
     loadUser,
     logout,
-    getUserInitials
+    getUserInitials,
+    isAdmin
   }
 }
