@@ -139,10 +139,20 @@
                 v-for="opt in qualityOptions"
                 :key="opt.value"
                 class="gr-quality-btn"
-                :class="{ 'gr-quality-btn--active': quality === opt.value }"
-                @click="quality = opt.value"
+                :class="{
+                  'gr-quality-btn--active': quality === opt.value,
+                  'gr-quality-btn--locked': opt.locked && user?.plan !== 'pro'
+                }"
+                :disabled="opt.locked && user?.plan !== 'pro'"
+                @click="opt.locked && user?.plan !== 'pro' ? null : quality = opt.value"
               >
-                <div class="gr-quality-label">{{ opt.label }}</div>
+                <div class="gr-quality-label">
+                  {{ opt.label }}
+                  <span v-if="opt.locked && user?.plan !== 'pro'" class="gr-quality-lock">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2"/></svg>
+                    Pro
+                  </span>
+                </div>
                 <div class="gr-quality-desc">{{ opt.desc }}</div>
               </button>
             </div>
@@ -217,24 +227,25 @@ watch(fonts, (newFonts) => {
   }
 }, { immediate: true })
 
-const selectedTemplateId = ref<number | null>(null)
+const selectedTemplateId = ref<string | null>(null)
 const uploadMode = ref<'csv' | 'json' | 'single'>('csv')
 const jsonInput = ref('')
 const data = ref<Record<string, any>[]>([])
 const singleData = ref<Record<string, any>>({})
 const outputFormat = ref<'pdf' | 'png'>('pdf')
-const quality = ref<'standard' | 'high' | 'maximum'>('high')
+const quality = ref<'standard' | 'high' | 'maximum' | 'ultra'>('high')
 const qualityOptions = [
   { value: 'standard' as const, label: 'Standard', desc: 'smaller file' },
   { value: 'high' as const, label: 'High', desc: 'balanced' },
   { value: 'maximum' as const, label: 'Maximum', desc: 'best quality' },
+  { value: 'ultra' as const, label: 'Ultra', desc: 'print-grade, above maximum', locked: true },
 ]
 const dataKeys = computed(() => data.value.length === 0 ? [] : Object.keys(data.value[0]))
 const generating = ref(false)
 const generationDone = ref(false)
 const progress = ref(0)
 
-if (route.query.template) selectedTemplateId.value = parseInt(route.query.template as string)
+if (route.query.template) selectedTemplateId.value = String(route.query.template)
 
 const templatePlaceholders = computed(() => {
   if (!selectedTemplateId.value || !templates.value) return []
@@ -359,8 +370,9 @@ async function renderCertificate(layout: any, record: Record<string, any>, forma
   console.log('layout.background:', layout.background)
   console.log('layout.elements:', layout.elements?.map((el: any) => ({ kind: el.kind, src: el.src, filepath: el.filepath })))
   
-  const presets: Record<string, any> = { standard: { scale: 1, jpeg: 0.75 }, high: { scale: 1.5, jpeg: 0.85 }, maximum: { scale: 2, jpeg: 0.95 } }
-  const preset = presets[quality.value]
+  const effectiveQuality = quality.value === 'ultra' && user.value?.plan !== 'pro' ? 'maximum' : quality.value
+  const presets: Record<string, any> = { standard: { scale: 1, jpeg: 0.75 }, high: { scale: 1.5, jpeg: 0.85 }, maximum: { scale: 2, jpeg: 0.95 }, ultra: { scale: 3, jpeg: 1.0 } }
+  const preset = presets[effectiveQuality]
   const container = document.createElement('div')
   container.style.cssText = `position:absolute;left:-9999px;width:${layout.width}px;height:${layout.height}px;background:${layout.backgroundColor || '#fff'}`
   document.body.appendChild(container)
@@ -583,14 +595,17 @@ async function renderCertificate(layout: any, record: Record<string, any>, forma
 .gr-stat-val--mono { font-family: 'JetBrains Mono', monospace; }
 
 /* quality */
-.gr-quality-row { display: flex; gap: 8px; }
+.gr-quality-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .gr-quality-btn {
-  flex: 1; border: 1px solid var(--gr-line); background: #fff; cursor: pointer;
-  font-family: inherit; padding: 10px; border-radius: 10px; transition: all .15s;
+  flex: 1 1 calc(50% - 4px); min-width: 0; border: 1px solid var(--gr-line); background: #fff; cursor: pointer;
+  font-family: inherit; padding: 8px 6px; border-radius: 10px; transition: all .15s;
 }
 .gr-quality-btn--active { border-color: var(--gr-accent); background: #FFF4F0; }
-.gr-quality-label { font-size: 13px; font-weight: 600; }
-.gr-quality-desc { font-size: 11px; color: var(--gr-muted); margin-top: 2px; }
+.gr-quality-btn--locked { opacity: 0.5; cursor: not-allowed; }
+.gr-quality-btn--locked:hover { border-color: var(--gr-line); background: #fff; }
+.gr-quality-label { font-size: 12px; font-weight: 600; }
+.gr-quality-lock { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--gr-accent); vertical-align: middle; }
+.gr-quality-desc { font-size: 10.5px; color: var(--gr-muted); margin-top: 2px; }
 
 /* generate */
 .gr-generate-btn {

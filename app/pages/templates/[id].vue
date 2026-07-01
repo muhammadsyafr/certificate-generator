@@ -27,13 +27,6 @@
           {{ saveStatusText }}
         </div>
       </div>
-      <div class="ed-plan-pill">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2v6m0 0l-2.5-2.5M12 8l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Free plan
-        <a href="/#pricing" class="plan-upgrade">Upgrade</a>
-      </div>
       <div class="ed-header-right">
         <div class="ed-undo-group">
           <button class="ed-icon-btn" :class="{ 'ed-icon-btn--disabled': !canUndo }" :disabled="!canUndo" @click="undo" @mouseenter="softIn" @mouseleave="softOut" title="Undo Ctrl+Z">
@@ -61,19 +54,23 @@
         >
           {{ saving ? 'Saving...' : 'Save' }}
         </button>
-        <button
-          :disabled="saving"
+        <NuxtLink
           class="ed-btn-accent"
+          :to="isNew ? '/generate' : `/generate?template=${templateId}`"
           @mouseenter="ctaIn"
           @mouseleave="ctaOut"
-          @click="generatePdfs"
-          title="Generate PDFs from data"
+          title="Generate PDFs from this template"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/>
           </svg>
-          Generate {{ records.length }} PDFs
-        </button>
+          Generate
+        </NuxtLink>
+        <div class="ed-plan-pill" :class="{ 'ed-plan-pill--pro': user?.plan === 'pro' }">
+          <span v-if="user?.plan === 'pro'" class="ed-plan-pro">Pro plan</span>
+          <span v-else>Free plan</span>
+          <a v-if="user?.plan !== 'pro'" href="/#pricing" class="plan-upgrade">Upgrade</a>
+        </div>
         <SharedUserMenu />
       </div>
     </header>
@@ -608,7 +605,7 @@
             </svg>
             {{ saving ? 'Saving...' : 'Save Template' }}
           </button>
-          <div class="data-watermark-note">Free plan exports include a small watermark.</div>
+          <div v-if="user?.plan !== 'pro'" class="data-watermark-note">Free plan exports include a small watermark.</div>
         </div>
       </aside>
     </div>
@@ -630,6 +627,7 @@ import TourOverlay from '~/components/TourOverlay.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { user } = useAuth();
 const isNew = computed(() => route.params.id === 'new');
 const templateId = computed(() => (isNew.value ? null : route.params.id as string));
 
@@ -1347,8 +1345,20 @@ function onPointerUp(e: PointerEvent) {
     const z = zoom.value;
     const dx = (e.clientX - dragState.sx) / z;
     const dy = (e.clientY - dragState.sy) / z;
-    const nx = Math.round(dragState.ox + dx);
-    const ny = Math.round(dragState.oy + dy);
+    let cx = dragState.ox + dx;
+    let cy = dragState.oy + dy;
+    const el = elements.value.find(x => x.id === dragState!.id);
+    if (el) {
+      const ecx = cx + el.w / 2;
+      const ecy = cy + el.h / 2;
+      const ccx = layout.width / 2;
+      const ccy = layout.height / 2;
+      const snapThreshold = 5;
+      if (Math.abs(ecx - ccx) < snapThreshold) cx = ccx - el.w / 2;
+      if (Math.abs(ecy - ccy) < snapThreshold) cy = ccy - el.h / 2;
+    }
+    const nx = Math.round(cx);
+    const ny = Math.round(cy);
     pushUndo();
     const idx = elements.value.findIndex(el => el.id === dragState!.id);
     if (idx !== -1) {
@@ -1624,10 +1634,6 @@ watch(() => elements.value, () => {
   autoSave();
 }, { deep: true });
 
-function generatePdfs() {
-  toastMsg(`Generating ${records.length} PDFs — demo mode`);
-}
-
 function handleCsvUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -1698,13 +1704,13 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
 .ed-title-input {
   border: none; background: transparent; font-family: inherit;
   font-size: 14px; font-weight: 600; color: var(--ink);
-  outline: none; padding: 0; width: 220px;
+  outline: none; padding: 0; width: 120px;
   border-bottom: 1px dashed transparent; transition: border-color .15s;
 }
 .ed-title-input:focus { border-bottom-color: var(--accent); }
 .ed-title-input::placeholder { color: var(--muted); }
-.ed-save-status { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
-.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #1Fae6b; }
+.ed-save-status { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #1Fae6b; flex-shrink: 0; }
 .ed-undo-group { display: flex; align-items: center; gap: 2px; margin-left: 14px; }
 .ed-icon-btn--disabled { opacity: 0.3; cursor: not-allowed; }
 .ed-icon-btn {
@@ -1719,6 +1725,10 @@ const contextMenu = ref({ visible: false, x: 0, y: 0 });
   padding: 6px 8px 6px 13px; border-radius: 999px;
   font-size: 12.5px; font-weight: 500; color: var(--muted);
 }
+.ed-plan-pill--pro {
+  background: #FFF4F0; border-color: rgba(245,82,30,0.2); color: var(--accent);
+}
+.ed-plan-pro { color: var(--accent); font-weight: 600; }
 .plan-upgrade {
   text-decoration: none; background: var(--ink); color: #fff;
   font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
