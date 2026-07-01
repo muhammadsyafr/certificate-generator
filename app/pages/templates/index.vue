@@ -964,11 +964,17 @@
                 </div>
             </Transition>
         </Teleport>
+
+        <!-- TOUR OVERLAY -->
+        <ClientOnly>
+            <TourOverlay />
+        </ClientOnly>
     </div>
 </template>
 
 <script setup lang="ts">
 import { navigateTo } from "#app";
+import TourOverlay from "~/components/TourOverlay.vue";
 
 const { get } = useApi();
 const templates = ref<any[]>([]);
@@ -992,6 +998,13 @@ async function refresh() {
 
 onMounted(() => {
   loadTemplates();
+  
+  // Start tour for first-time users
+  setTimeout(() => {
+    if (!tour.hasSeenTour()) {
+      tour.startTour(tourSteps);
+    }
+  }, 800);
 });
 
 const view = ref<"grid" | "list">("grid");
@@ -1026,6 +1039,35 @@ const {
 } = useHoverIntents();
 
 const { user } = useAuth();
+
+// Tour setup
+const tour = useTour();
+const tourSteps = [
+  {
+    target: '.tp-btn-new',
+    title: 'Create your first template',
+    description: 'Click here to start designing a new certificate template. You can customize every element to match your brand.',
+    placement: 'bottom' as const
+  },
+  {
+    target: '.tp-topbar-nav',
+    title: 'Navigate between sections',
+    description: 'Switch between Templates (design), Assets (upload images/fonts), and Generate (bulk create certificates).',
+    placement: 'bottom' as const
+  },
+  {
+    target: '.tp-plan-badge',
+    title: 'Track your usage',
+    description: 'See how many templates you have created. Free plan includes 2 templates, Pro unlocks unlimited.',
+    placement: 'bottom' as const
+  },
+  {
+    target: '.tp-toolbar',
+    title: 'Search and organize',
+    description: 'Search templates by name, sort by date or name, and switch between grid or list view.',
+    placement: 'bottom' as const
+  }
+];
 
 const allTemplates = computed(() => templates.value || []);
 

@@ -453,11 +453,13 @@ watchEffect(() => {
 
 const bgAssets = computed(() => assets.value?.filter(a => a.type === 'background') || [])
 const logoAssets = computed(() => assets.value?.filter(a => a.type === 'logo') || [])
+const freeImageAssets = computed(() => assets.value?.filter(a => a.type === 'free-image') || [])
 const fontAssets = computed(() => fonts.value || [])
 
 const tabs = computed(() => [
   { key: 'backgrounds', label: 'Backgrounds', count: bgAssets.value.length, locked: false, iconSvg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 4-4 5 4"/></svg>', title: 'Backgrounds', subtitle: 'Add as the base layer in your certificate canvas.', accept: 'PNG, JPG, SVG — max 10 MB', fileAccept: 'image/png,image/jpeg,image/svg+xml' },
   { key: 'logos', label: 'Logos', count: logoAssets.value.length, locked: false, iconSvg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>', title: 'Logos', subtitle: 'Upload your brand logo to place on certificates.', accept: 'SVG, PNG (transparent) — max 8 MB', fileAccept: 'image/png,image/svg+xml' },
+  { key: 'free-images', label: 'Free Images', count: freeImageAssets.value.length, locked: false, iconSvg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>', title: 'Free Images', subtitle: 'General purpose images to use anywhere in your certificate.', accept: 'PNG, JPG, SVG — max 10 MB', fileAccept: 'image/png,image/jpeg,image/svg+xml' },
   { key: 'fonts', label: 'Custom fonts', count: fontAssets.value.length, locked: false, iconSvg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14"/><path d="M9 6v13"/></svg>', title: 'Custom fonts', subtitle: 'Upload your own typefaces to use in the canvas editor.', accept: 'TTF, OTF, WOFF, WOFF2 — max 6 MB', fileAccept: '.ttf,.otf,.woff,.woff2' },
 ])
 
@@ -466,6 +468,7 @@ const currentTab = computed(() => tabs.value.find(t => t.key === activeTab.value
 const rawAssets = computed(() => {
   if (activeTab.value === 'backgrounds') return bgAssets.value
   if (activeTab.value === 'logos') return logoAssets.value
+  if (activeTab.value === 'free-images') return freeImageAssets.value
   if (activeTab.value === 'fonts') return fontAssets.value
   return []
 })
@@ -489,6 +492,18 @@ const filteredAssets = computed(() => {
       return {
         ...a,
         _name: a.filename || 'Logo',
+        _meta: `PNG · ${formatBytes(a.metadata?.size || 0)}`,
+        _size: formatBytes(a.metadata?.size || 0),
+        _date: formatDate(a.uploadedAt || a.createdAt),
+        _usedIn: '—',
+        _inUse: false,
+        _typeLabel: 'PNG image',
+      }
+    }
+    if (activeTab.value === 'free-images') {
+      return {
+        ...a,
+        _name: a.filename || 'Free Image',
         _meta: `PNG · ${formatBytes(a.metadata?.size || 0)}`,
         _size: formatBytes(a.metadata?.size || 0),
         _date: formatDate(a.uploadedAt || a.createdAt),
@@ -557,7 +572,13 @@ function onUploadClick() {
   if (currentTab.value.locked) {
     showToast('🔒 Upgrade to Pro to upload', false)
   } else {
-    uploadType.value = activeTab.value === 'logos' ? 'logo' : 'background'
+    if (activeTab.value === 'logos') {
+      uploadType.value = 'logo'
+    } else if (activeTab.value === 'free-images') {
+      uploadType.value = 'free-image'
+    } else {
+      uploadType.value = 'background'
+    }
     showUploadModal.value = true
   }
 }
