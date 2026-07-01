@@ -1318,7 +1318,7 @@ function onPointerMove(e: PointerEvent) {
         nw = Math.max(20, ow + dx * (dir.includes('e') ? 1 : -1));
         nh = nw / ratio;
       } else {
-        nh = Math.max(20, oh + dy * (dir.includes('s') ? 1 : -1));
+        nh = Math.max(1, oh + dy * (dir.includes('s') ? 1 : -1));
         nw = nh * ratio;
       }
       if (dir.includes('w')) nx = ox + ow - nw;
@@ -1326,8 +1326,8 @@ function onPointerMove(e: PointerEvent) {
     } else {
       if (dir.includes('e')) nw = Math.max(20, ow + dx);
       if (dir.includes('w')) { nw = Math.max(20, ow - dx); nx = ox + ow - nw; }
-      if (dir.includes('s')) nh = Math.max(20, oh + dy);
-      if (dir.includes('n')) { nh = Math.max(20, oh - dy); ny = oy + oh - nh; }
+      if (dir.includes('s')) nh = Math.max(1, oh + dy);
+      if (dir.includes('n')) { nh = Math.max(1, oh - dy); ny = oy + oh - nh; }
     }
     const idx = elements.value.findIndex(el => el.id === resizeState!.id);
     if (idx !== -1) {
@@ -1443,12 +1443,12 @@ onMounted(async () => {
           layout.backgroundColor = saved.backgroundColor || '#ffffff';
           // Prepend base URL to background if it's a relative path
           const bg = saved.background || '';
-          layout.background = bg && !bg.startsWith('http') ? `${apiBaseUrl}/uploads/${bg}` : bg;
+          layout.background = bg && !bg.startsWith('http') && !bg.startsWith('data:') ? `${apiBaseUrl}/uploads/${bg}` : bg;
           if (saved.elements && Array.isArray(saved.elements)) {
             elements.value = saved.elements.map((e: any, i: number) => {
               const el = oldElToEd(e, e.id || 'loaded_' + i);
               // Prepend base URL to image src if it's a relative path
-              if (el.src && !el.src.startsWith('http')) {
+              if (el.src && !el.src.startsWith('http') && !el.src.startsWith('data:')) {
                 el.src = `${apiBaseUrl}/uploads/${el.src}`;
               }
               return el;
@@ -1581,7 +1581,10 @@ async function saveTemplate(silent = false) {
 
 // Auto-save with debounce (2 second delay, silent — no toast)
 const autoSave = debounce(async () => {
-  if (!isNew.value && templateName.value.trim() && !justCreated.value) {
+  if (isNew.value && !templateName.value.trim()) {
+    templateName.value = 'Untitled Template';
+  }
+  if (templateName.value.trim() && !justCreated.value) {
     await saveTemplate(true);
   }
 }, 2000);
