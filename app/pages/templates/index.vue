@@ -1046,8 +1046,9 @@ const tourSteps = [
   {
     target: '.tp-btn-new',
     title: 'Create your first template',
-    description: 'Click here to start designing a new certificate template. You can customize every element to match your brand.',
-    placement: 'bottom' as const
+    description: 'Click "New template" to start designing. The editor will guide you through adding text, images, and styling your certificate.',
+    placement: 'bottom' as const,
+    action: 'create'
   },
   {
     target: '.tp-topbar-nav',
@@ -1059,12 +1060,6 @@ const tourSteps = [
     target: '.tp-plan-badge',
     title: 'Track your usage',
     description: 'See how many templates you have created. Free plan includes 2 templates, Pro unlocks unlimited.',
-    placement: 'bottom' as const
-  },
-  {
-    target: '.tp-toolbar',
-    title: 'Search and organize',
-    description: 'Search templates by name, sort by date or name, and switch between grid or list view.',
     placement: 'bottom' as const
   }
 ];
@@ -1132,6 +1127,10 @@ function formatRelative(date: any): string {
 }
 
 function createNew() {
+    // If tour is active and on action step, complete it
+    if (tour.isActive.value && tour.currentStepData.value?.action === 'create') {
+        tour.completeActionStep();
+    }
     navigateTo("/templates/new");
 }
 

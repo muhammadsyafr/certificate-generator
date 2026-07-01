@@ -52,7 +52,7 @@
         </button>
         <button
           :disabled="!canSave"
-          class="ed-btn-outline"
+          class="ed-btn-outline ed-btn-save"
           @mouseenter="softIn"
           @mouseleave="whiteOut"
           @click="saveTemplate"
@@ -579,14 +579,21 @@
     <BaseToast :visible="toastCtrl.visible.value">
       {{ toastCtrl.message.value }}
     </BaseToast>
+
+    <!-- Tour Overlay -->
+    <ClientOnly>
+      <TourOverlay />
+    </ClientOnly>
   </div>
 </template>
 
 <script setup lang="ts">
+import TourOverlay from '~/components/TourOverlay.vue';
+
 const route = useRoute();
 const router = useRouter();
 const isNew = computed(() => route.params.id === 'new');
-const templateId = computed(() => (isNew.value ? null : parseInt(route.params.id as string)));
+const templateId = computed(() => (isNew.value ? null : route.params.id as string));
 
 useHead({
   bodyAttrs: { style: 'margin:0;overflow:hidden;' },
@@ -594,6 +601,37 @@ useHead({
 
 const { softIn, softOut, whiteOut, ctaIn, ctaOut, cardIn, cardOut } = useHoverIntents()
 const toastCtrl = useToast()
+
+// Tour setup
+const tour = useTour();
+const editorTourSteps = [
+  {
+    target: '.ed-add-grid',
+    title: 'Add elements to your certificate',
+    description: 'Start by adding text, images, or shapes. Click "Text" to add your first element.',
+    placement: 'right' as const,
+    action: 'add-element'
+  },
+  {
+    target: '.ed-canvas',
+    title: 'Design your certificate',
+    description: 'Click and drag elements on the canvas to position them. Select any element to customize its properties on the right.',
+    placement: 'top' as const
+  },
+  {
+    target: '.ed-title-input',
+    title: 'Name your template',
+    description: 'Give your template a meaningful name so you can find it easily later.',
+    placement: 'bottom' as const,
+    action: 'name-template'
+  },
+  {
+    target: '.ed-btn-save',
+    title: 'Save your template',
+    description: 'Click "Save" to save your template. Once saved, you can generate certificates from it.',
+    placement: 'bottom' as const
+  }
+];
 
 // ── State ──
 const templateName = ref('');
@@ -610,6 +648,7 @@ const csvColumns = ref<string[]>(['full_name', 'course', 'date']);
 const editingTitle = ref(false);
 const hiddenIds = ref<Record<string, boolean>>({});
 const loaded = ref(false);
+const justCreated = ref(false);
 
 // Auto-save
 const { debounce } = useRateLimit();
@@ -1246,6 +1285,10 @@ function onKeyDown(e: KeyboardEvent) {
 function onKeyUp(e: KeyboardEvent) { if (e.key === 'Shift') shiftHeld.value = false; }
 
 function addTextElement() {
+  // Advance tour if on add-element step
+  if (tour.isActive.value && tour.currentStepData.value?.action === 'add-element') {
+    tour.completeActionStep();
+  }
   addElement('text');
 }
 
@@ -1312,6 +1355,13 @@ onMounted(async () => {
     }
   }
   loaded.value = true;
+  
+  // Start editor tour for new users on new template
+  if (isNew.value && !tour.hasSeenTour()) {
+    setTimeout(() => {
+      tour.startTour(editorTourSteps, 'editor');
+    }, 800);
+  }
 });
 
 onUnmounted(() => {
@@ -1375,10 +1425,24 @@ async function saveTemplate() {
       const { post } = useApi();
       const result: any = await post('/api/templates', payload);
       if (result?.id) {
-        router.replace(`/templates/${result.id}`);
+        justCreated.value = true;
+        // Update route without navigation to prevent remount
+        await router.replace(`/templates/${result.id}`);
         saveStatus.value = 'saved';
         lastSavedAt.value = new Date();
         toastMsg('Template saved');
+        
+        // Complete tour when user saves (tour is active and on last step)
+        if (tour.isActive.value && tour.isLastStep.value) {
+          setTimeout(() => {
+            tour.completeTour();
+          }, 500);
+        }
+        
+        // Clear justCreated flag after 3 seconds to allow auto-save again
+        setTimeout(() => {
+          justCreated.value = false;
+        }, 3000);
       }
     } else {
       const { put } = useApi();
@@ -1386,6 +1450,13 @@ async function saveTemplate() {
       saveStatus.value = 'saved';
       lastSavedAt.value = new Date();
       toastMsg('Template saved');
+      
+      // Complete tour when user saves (tour is active and on last step)
+      if (tour.isActive.value && tour.isLastStep.value) {
+        setTimeout(() => {
+          tour.completeTour();
+        }, 500);
+      }
     }
   } catch (e) {
     toastMsg('Failed to save: ' + (e as Error).message);
@@ -1397,7 +1468,7 @@ async function saveTemplate() {
 
 // Auto-save with debounce (1 second delay)
 const autoSave = debounce(async () => {
-  if (!isNew.value && templateName.value.trim()) {
+  if (!isNew.value && templateName.value.trim() && !justCreated.value) {
     await saveTemplate();
   }
 }, 1000);
@@ -1413,6 +1484,11 @@ function markUnsaved() {
 watch(() => templateName.value, () => {
   markUnsaved();
   autoSave();
+  
+  // Advance tour when user types template name
+  if (tour.isActive.value && tour.currentStepData.value?.action === 'name-template' && templateName.value.trim()) {
+    tour.completeActionStep();
+  }
 });
 
 watch(() => layout.background, () => {

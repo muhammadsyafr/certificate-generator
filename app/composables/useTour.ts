@@ -3,6 +3,7 @@ export const useTour = () => {
   const isActive = useState('tour-active', () => false)
   const currentStep = useState('tour-step', () => 0)
   const steps = useState<TourStep[]>('tour-steps', () => [])
+  const tourContext = useState('tour-context', () => 'templates') // 'templates' or 'editor'
 
   const hasSeenTour = () => {
     if (process.client) {
@@ -18,7 +19,7 @@ export const useTour = () => {
     isActive.value = false
   }
 
-  const startTour = (tourSteps: TourStep[]) => {
+  const startTour = (tourSteps: TourStep[], context = 'templates') => {
     console.log('[useTour] startTour called', { hasSeenTour: hasSeenTour(), tourSteps })
     if (hasSeenTour()) {
       console.log('[useTour] Tour already seen, skipping')
@@ -26,11 +27,20 @@ export const useTour = () => {
     }
     steps.value = tourSteps
     currentStep.value = 0
+    tourContext.value = context
     isActive.value = true
     console.log('[useTour] Tour activated', { isActive: isActive.value, steps: steps.value.length })
   }
 
   const nextStep = () => {
+    const current = currentStepData.value
+    
+    // If current step has an action requirement, don't advance automatically
+    if (current?.action === 'create') {
+      // Wait for user to click the button
+      return
+    }
+    
     if (currentStep.value < steps.value.length - 1) {
       currentStep.value++
     } else {
@@ -52,6 +62,16 @@ export const useTour = () => {
     markTourComplete()
   }
 
+  // Called when user performs the required action
+  const completeActionStep = () => {
+    if (currentStep.value < steps.value.length - 1) {
+      currentStep.value++
+    } else {
+      // Continue to editor tour
+      isActive.value = false
+    }
+  }
+
   const currentStepData = computed(() => steps.value[currentStep.value])
   const progress = computed(() => ((currentStep.value + 1) / steps.value.length) * 100)
   const isFirstStep = computed(() => currentStep.value === 0)
@@ -61,6 +81,7 @@ export const useTour = () => {
     isActive,
     currentStep,
     steps,
+    tourContext,
     currentStepData,
     progress,
     isFirstStep,
@@ -70,7 +91,8 @@ export const useTour = () => {
     nextStep,
     prevStep,
     skipTour,
-    completeTour
+    completeTour,
+    completeActionStep
   }
 }
 

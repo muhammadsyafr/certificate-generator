@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const method = event.method
-  const id = parseInt(getRouterParam(event, 'id') || '0')
+  const id = getRouterParam(event, 'id') || ''
 
   if (!id) {
     throw createError({

@@ -2,8 +2,54 @@
   <Teleport to="body">
     <Transition name="tour-fade">
       <div v-if="isActive" class="tour-overlay">
-        <!-- Backdrop with spotlight cutout -->
-        <div class="tour-backdrop" @click="onBackdropClick" />
+        <!-- Backdrop pieces (4 rectangles around spotlight) -->
+        <div v-if="spotlightRect" class="tour-backdrop-pieces">
+          <!-- Top -->
+          <div 
+            class="tour-backdrop-piece"
+            :style="{
+              top: 0,
+              left: 0,
+              right: 0,
+              height: `${spotlightRect.top - 8}px`
+            }"
+            @click="onBackdropClick"
+          />
+          <!-- Bottom -->
+          <div 
+            class="tour-backdrop-piece"
+            :style="{
+              top: `${spotlightRect.bottom + 8}px`,
+              left: 0,
+              right: 0,
+              bottom: 0
+            }"
+            @click="onBackdropClick"
+          />
+          <!-- Left -->
+          <div 
+            class="tour-backdrop-piece"
+            :style="{
+              top: `${spotlightRect.top - 8}px`,
+              left: 0,
+              width: `${spotlightRect.left - 8}px`,
+              height: `${spotlightRect.height + 16}px`
+            }"
+            @click="onBackdropClick"
+          />
+          <!-- Right -->
+          <div 
+            class="tour-backdrop-piece"
+            :style="{
+              top: `${spotlightRect.top - 8}px`,
+              left: `${spotlightRect.right + 8}px`,
+              right: 0,
+              height: `${spotlightRect.height + 16}px`
+            }"
+            @click="onBackdropClick"
+          />
+        </div>
+        <div v-else class="tour-backdrop" @click="onBackdropClick" />
         
         <!-- Spotlight highlight -->
         <div 
@@ -52,11 +98,15 @@
                 Back
               </button>
               <button 
+                v-if="!currentStepData?.action"
                 class="tour-btn tour-btn--primary" 
                 @click="nextStep"
               >
                 {{ isLastStep ? 'Got it!' : 'Next' }}
               </button>
+              <div v-else class="tour-action-hint">
+                👆 Click to continue
+              </div>
             </div>
           </div>
         </div>
@@ -204,10 +254,22 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
+.tour-backdrop-pieces {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tour-backdrop-piece {
+  position: fixed;
+  background: rgba(20, 17, 14, 0.7);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
 .tour-spotlight {
   position: fixed;
   border-radius: 8px;
-  box-shadow: 0 0 0 4000px rgba(20, 17, 14, 0.7);
   border: 2px solid #F5521E;
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -335,6 +397,14 @@ onUnmounted(() => {
 
 .tour-btn--primary:hover {
   background: #E04718;
+}
+
+.tour-action-hint {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #F5521E;
+  text-align: center;
 }
 
 .tour-fade-enter-active,
